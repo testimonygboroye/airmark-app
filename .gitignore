@@ -35,3 +35,7 @@ coverage/
 # Misc
 *.local
 .cache/
+
+# Local curl/test artifacts
+cookies.txt
+**/cookies.txt
