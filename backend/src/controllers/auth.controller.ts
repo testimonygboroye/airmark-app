@@ -9,16 +9,13 @@ import {
   clearRefreshCookie,
   REFRESH_COOKIE_NAME,
 } from "../services/token.service";
-import {
-  generateSecureToken,
-  hashRefreshToken,
-} from "../utils/jwt.util";
+import { generateSecureToken, hashRefreshToken } from "../utils/jwt.util";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../services/email.service";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, middleName, lastName, email, password } = req.body;
 
   const existing = await User.findOne({ email });
   if (existing) {
@@ -30,6 +27,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const user = await User.create({
     firstName,
+    middleName: middleName || undefined,
     lastName,
     email,
     passwordHash,
@@ -99,6 +97,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       user: {
         id: user._id,
         firstName: user.firstName,
+        middleName: user.middleName,
         lastName: user.lastName,
         email: user.email,
         isSuperAdmin: user.isSuperAdmin,
@@ -125,7 +124,6 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     throw ApiError.unauthorized("Account no longer exists");
   }
 
-  // Rotate: revoke old, issue new
   stored.revoked = true;
   await stored.save();
 
@@ -153,8 +151,6 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   const { email } = req.body;
   const user = await User.findOne({ email });
 
-  // Always respond identically whether or not the account exists,
-  // to avoid leaking which emails are registered.
   if (user) {
     const { raw, hash } = generateSecureToken();
     user.passwordResetTokenHash = hash;
@@ -189,7 +185,6 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   user.passwordResetExpires = undefined;
   await user.save();
 
-  // Revoke all existing sessions on password change
   await RefreshToken.updateMany({ userId: user._id }, { revoked: true });
 
   res.json({ success: true, message: "Password reset successfully. Please log in." });
@@ -204,6 +199,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     data: {
       id: user._id,
       firstName: user.firstName,
+      middleName: user.middleName,
       lastName: user.lastName,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,

@@ -7,6 +7,7 @@ export interface IUser extends Document {
   email: string;
   passwordHash: string;
   firstName: string;
+  middleName?: string;
   lastName: string;
   isSuperAdmin: boolean;
   isEmailVerified: boolean;
@@ -31,6 +32,7 @@ const userSchema = new Schema<IUser>(
     },
     passwordHash: { type: String, required: true, select: false },
     firstName: { type: String, required: true, trim: true, maxlength: 60 },
+    middleName: { type: String, trim: true, maxlength: 60 },
     lastName: { type: String, required: true, trim: true, maxlength: 60 },
     isSuperAdmin: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
