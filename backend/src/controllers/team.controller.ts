@@ -4,7 +4,6 @@ import { Team } from "../models/Team.model";
 import { Membership } from "../models/Membership.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
 
 function slugify(name: string): string {
   return (

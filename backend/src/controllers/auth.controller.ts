@@ -12,8 +12,6 @@ import {
 import {
   generateSecureToken,
   hashRefreshToken,
-  msFromExpiresIn,
-  signAccessToken,
 } from "../utils/jwt.util";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../services/email.service";
 import { env } from "../config/env";
