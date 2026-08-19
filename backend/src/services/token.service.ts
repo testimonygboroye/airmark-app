@@ -37,8 +37,8 @@ export async function issueTokenPair(
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: env.IS_PRODUCTION,
-    sameSite: env.IS_PRODUCTION ? "strict" : "lax",
-    domain: env.IS_PRODUCTION ? env.COOKIE_DOMAIN : undefined,
+    sameSite: env.IS_PRODUCTION ? "none" : "lax",
+    domain: undefined,
     path: "/api/auth",
     maxAge: msFromExpiresIn(env.JWT_REFRESH_EXPIRES_IN),
   });
