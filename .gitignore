@@ -39,3 +39,7 @@ coverage/
 # Local curl/test artifacts
 cookies.txt
 **/cookies.txt
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+**/*.tsbuildinfo
