@@ -1,12 +1,16 @@
 import { z } from "zod";
 
+const NAME_PATTERN = /^[A-Za-z]+(-[A-Za-z]+)*$/;
+
 const nameField = (required: boolean) => {
   const base = z
     .string()
     .trim()
     .max(60)
-    .regex(/^[A-Za-z]*$/, "Only letters are allowed");
-  return required ? base.min(1, "This field is required") : base.optional().or(z.literal(""));
+    .regex(NAME_PATTERN, "Only letters and hyphens between words are allowed (e.g. El-rufai)");
+  return required
+    ? base.min(1, "This field is required")
+    : z.union([base, z.literal("")]);
 };
 
 const passwordRules = z

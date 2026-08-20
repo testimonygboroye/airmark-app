@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 import { useAuthStore } from "@/store/authStore";
 import { connectSocket } from "@/lib/socketClient";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Card } from "@/components/ui/Card";
 import { Logo } from "@/components/brand/Logo";
 
@@ -24,10 +26,8 @@ export function LoginPage() {
       setAuth(data.data.accessToken, data.data.user);
       connectSocket(data.data.accessToken);
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message || "Invalid email or password."
-      );
+    } catch (err) {
+      setError(getErrorMessage(err, "Invalid email or password."));
     } finally {
       setIsLoading(false);
     }
@@ -37,12 +37,8 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-navy px-4">
       <Card className="max-w-md w-full">
         <Logo />
-        <h1 className="font-display text-xl font-semibold mt-6 mb-1">
-          Welcome back
-        </h1>
-        <p className="text-sm text-standby-slate mb-6">
-          Log in to your Airmark account.
-        </p>
+        <h1 className="font-display text-xl font-semibold mt-6 mb-1">Welcome back</h1>
+        <p className="text-sm text-standby-slate mb-6">Log in to your Airmark account.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
@@ -52,9 +48,8 @@ export function LoginPage() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <Input
+          <PasswordInput
             label="Password"
-            type="password"
             required
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}

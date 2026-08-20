@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true, // sends the httpOnly refresh cookie automatically
-  timeout: 15000,
+  timeout: 60000, // accommodates Render free-tier cold starts (up to ~60s)
 });
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
