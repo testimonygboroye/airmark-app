@@ -10,6 +10,8 @@ export const PERMISSIONS = {
   EVENT_VIEW: "event:view",
   TALLY_CONTROL: "tally:control",
   TALLY_VIEW: "tally:view",
+  ROS_MANAGE: "ros:manage",
+  ROS_CONTROL: "ros:control",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -41,6 +43,8 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.EVENT_VIEW,
       PERMISSIONS.TALLY_CONTROL,
       PERMISSIONS.TALLY_VIEW,
+      PERMISSIONS.ROS_MANAGE,
+      PERMISSIONS.ROS_CONTROL,
     ],
   },
   {

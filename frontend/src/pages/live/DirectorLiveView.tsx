@@ -1,15 +1,27 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
-import type { EventRecord, CameraAssignmentRecord } from "@/types";
+import { RunOfShowControls } from "@/components/live/RunOfShowControls";
+import { SegmentBanner } from "@/components/live/SegmentBanner";
+import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord } from "@/types";
 
 interface Props {
   event: EventRecord;
   cameras: CameraAssignmentRecord[];
   eventId: string;
+  segments: RunOfShowSegmentRecord[];
+  currentSegment: RunOfShowSegmentRecord | null;
+  nextSegment: RunOfShowSegmentRecord | null;
 }
 
-export function DirectorLiveView({ event, cameras, eventId }: Props) {
+export function DirectorLiveView({
+  event,
+  cameras,
+  eventId,
+  segments,
+  currentSegment,
+  nextSegment,
+}: Props) {
   const navigate = useNavigate();
 
   const setLiveMutation = useMutation({
@@ -34,6 +46,8 @@ export function DirectorLiveView({ event, cameras, eventId }: Props) {
           Exit
         </button>
       </header>
+
+      <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
       <div className="flex-1 px-4 py-6">
         <p className="text-xs text-surface-light/50 uppercase tracking-wide mb-3">
@@ -66,6 +80,13 @@ export function DirectorLiveView({ event, cameras, eventId }: Props) {
           ))}
         </div>
       </div>
+
+      <RunOfShowControls
+        eventId={eventId}
+        teamId={event.teamId}
+        segments={segments}
+        currentSegmentId={currentSegment?._id}
+      />
     </div>
   );
 }

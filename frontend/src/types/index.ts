@@ -50,6 +50,7 @@ export interface EventRecord {
   title: string;
   scheduledStart: string;
   status: EventStatus;
+  currentSegmentId?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +64,17 @@ export interface CameraAssignmentRecord {
   operatorUserId?: { _id: string; firstName: string; lastName: string; email: string } | null;
   label: string;
   isLive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RunOfShowSegmentRecord {
+  _id: string;
+  eventId: string;
+  teamId: string;
+  order: number;
+  title: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

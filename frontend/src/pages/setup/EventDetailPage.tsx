@@ -53,6 +53,7 @@ export function EventDetailPage() {
   const { event, cameras } = data;
   const canManage = hasPermission("event:manage");
   const canGoLive = hasPermission("tally:control");
+  const canManageRos = hasPermission("ros:manage");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -66,11 +67,18 @@ export function EventDetailPage() {
             })}
           </p>
         </div>
-        {canGoLive && (
-          <Link to={`/events/${event._id}/live`}>
-            <Button>Go Live</Button>
-          </Link>
-        )}
+        <div className="flex gap-2">
+          {canManageRos && (
+            <Link to={`/events/${event._id}/run-of-show`}>
+              <Button variant="secondary">Run of show</Button>
+            </Link>
+          )}
+          {canGoLive && (
+            <Link to={`/events/${event._id}/live`}>
+              <Button>Go Live</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">

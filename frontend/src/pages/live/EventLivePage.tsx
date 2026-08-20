@@ -8,22 +8,38 @@ import { useTeamRole } from "@/hooks/useTeamRole";
 import { Spinner } from "@/components/ui/Button";
 import { DirectorLiveView } from "./DirectorLiveView";
 import { OperatorLiveView } from "./OperatorLiveView";
-import type { EventRecord, CameraAssignmentRecord } from "@/types";
+import type {
+  EventRecord,
+  CameraAssignmentRecord,
+  RunOfShowSegmentRecord,
+} from "@/types";
 
 export function EventLivePage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { user } = useAuthStore();
   const [cameras, setCameras] = useState<CameraAssignmentRecord[]>([]);
+  const [segments, setSegments] = useState<RunOfShowSegmentRecord[]>([]);
+  const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
+  const [nextSegment, setNextSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [event, setEvent] = useState<EventRecord | null>(null);
 
   const { isLoading } = useQuery({
     queryKey: ["event", eventId],
     queryFn: async () => {
-      const res = await apiClient.get<{ data: { event: EventRecord; cameras: CameraAssignmentRecord[] } }>(
-        `/events/${eventId}`
-      );
+      const res = await apiClient.get<{
+        data: {
+          event: EventRecord;
+          cameras: CameraAssignmentRecord[];
+          segments: RunOfShowSegmentRecord[];
+          currentSegment: RunOfShowSegmentRecord | null;
+          nextSegment: RunOfShowSegmentRecord | null;
+        };
+      }>(`/events/${eventId}`);
       setEvent(res.data.data.event);
       setCameras(res.data.data.cameras);
+      setSegments(res.data.data.segments);
+      setCurrentSegment(res.data.data.currentSegment);
+      setNextSegment(res.data.data.nextSegment);
       return res.data.data;
     },
     enabled: !!eventId,
@@ -41,13 +57,33 @@ export function EventLivePage() {
     function handleCamerasUpdate(payload: { eventId: string; cameras: CameraAssignmentRecord[] }) {
       if (payload.eventId === eventId) setCameras(payload.cameras);
     }
+    function handleRosUpdate(payload: {
+      eventId: string;
+      currentSegment: RunOfShowSegmentRecord | null;
+      nextSegment: RunOfShowSegmentRecord | null;
+    }) {
+      if (payload.eventId === eventId) {
+        setCurrentSegment(payload.currentSegment);
+        setNextSegment(payload.nextSegment);
+      }
+    }
+    function handleSegmentsUpdated(payload: {
+      eventId: string;
+      segments: RunOfShowSegmentRecord[];
+    }) {
+      if (payload.eventId === eventId) setSegments(payload.segments);
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
+    socket.on("ros:update", handleRosUpdate);
+    socket.on("ros:segments-updated", handleSegmentsUpdated);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
       socket.off("cameras:update", handleCamerasUpdate);
+      socket.off("ros:update", handleRosUpdate);
+      socket.off("ros:segments-updated", handleSegmentsUpdated);
     };
   }, [eventId]);
 
@@ -63,20 +99,34 @@ export function EventLivePage() {
   const isDirector = hasPermission("tally:control");
 
   if (isDirector) {
-    return <DirectorLiveView event={event} cameras={cameras} eventId={eventId!} />;
+    return (
+      <DirectorLiveView
+        event={event}
+        cameras={cameras}
+        eventId={eventId!}
+        segments={segments}
+        currentSegment={currentSegment}
+        nextSegment={nextSegment}
+      />
+    );
   }
 
   if (myCamera) {
-    return <OperatorLiveView camera={myCamera} cameras={cameras} />;
+    return (
+      <OperatorLiveView
+        camera={myCamera}
+        cameras={cameras}
+        currentSegment={currentSegment}
+        nextSegment={nextSegment}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 text-center">
-      <div>
-        <p className="text-surface-light/60 text-sm">
-          You're not assigned to a camera for this event yet.
-        </p>
-      </div>
+      <p className="text-surface-light/60 text-sm">
+        You're not assigned to a camera for this event yet.
+      </p>
     </div>
   );
 }

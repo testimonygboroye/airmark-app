@@ -8,6 +8,7 @@ export interface IEvent extends Document {
   title: string;
   scheduledStart: Date;
   status: EventStatus;
+  currentSegmentId?: Types.ObjectId;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -24,6 +25,7 @@ const eventSchema = new Schema<IEvent>(
       default: "scheduled",
       index: true,
     },
+    currentSegmentId: { type: Schema.Types.ObjectId, ref: "RunOfShowSegment" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

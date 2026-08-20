@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import { Event } from "../models/Event.model";
 import { CameraAssignment } from "../models/CameraAssignment.model";
+import { RunOfShowSegment } from "../models/RunOfShowSegment.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
@@ -60,7 +61,17 @@ export const getEventDetail = asyncHandler(async (req: Request, res: Response) =
     .sort({ cameraNumber: 1 })
     .populate("operatorUserId", "firstName lastName email");
 
-  res.json({ success: true, data: { event, cameras } });
+  const segments = await RunOfShowSegment.find({ eventId }).sort({ order: 1 });
+  const currentIndex = segments.findIndex(
+    (s) => s._id.toString() === event.currentSegmentId?.toString()
+  );
+  const currentSegment = currentIndex >= 0 ? segments[currentIndex] : null;
+  const nextSegment = currentIndex >= 0 ? segments[currentIndex + 1] ?? null : null;
+
+  res.json({
+    success: true,
+    data: { event, cameras, segments, currentSegment, nextSegment },
+  });
 });
 
 export const setLiveCamera = asyncHandler(async (req: Request, res: Response) => {
