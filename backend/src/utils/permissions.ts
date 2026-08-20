@@ -1,9 +1,3 @@
-/**
- * Canonical permission key registry.
- * Every new feature module MUST register its permission keys here rather
- * than using ad-hoc strings elsewhere — this is the single source of truth
- * the dynamic role system checks against.
- */
 export const PERMISSIONS = {
   TEAM_MANAGE: "team:manage",
   TEAM_VIEW: "team:view",
@@ -14,11 +8,12 @@ export const PERMISSIONS = {
   EVENT_CREATE: "event:create",
   EVENT_MANAGE: "event:manage",
   EVENT_VIEW: "event:view",
+  TALLY_CONTROL: "tally:control",
+  TALLY_VIEW: "tally:view",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
-/** A role holding this wildcard bypasses individual permission checks entirely. */
 export const WILDCARD_PERMISSION = "*";
 
 export const DEFAULT_TEAM_ROLES: Array<{
@@ -44,13 +39,15 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.EVENT_CREATE,
       PERMISSIONS.EVENT_MANAGE,
       PERMISSIONS.EVENT_VIEW,
+      PERMISSIONS.TALLY_CONTROL,
+      PERMISSIONS.TALLY_VIEW,
     ],
   },
   {
     name: "Operator",
     rank: 2,
     isSystemRole: true,
-    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW],
+    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW, PERMISSIONS.TALLY_VIEW],
   },
   {
     name: "Editor",
@@ -62,6 +59,6 @@ export const DEFAULT_TEAM_ROLES: Array<{
     name: "Viewer",
     rank: 3,
     isSystemRole: true,
-    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW],
+    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW, PERMISSIONS.TALLY_VIEW],
   },
 ];

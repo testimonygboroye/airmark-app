@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { useAuthStore } from "@/store/authStore";
@@ -12,8 +12,8 @@ import { Logo } from "@/components/brand/Logo";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const justLoggedOut = searchParams.get("loggedOut") === "1";
+  const location = useLocation();
+  const justLoggedOut = (location.state as { loggedOut?: boolean } | null)?.loggedOut === true;
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);

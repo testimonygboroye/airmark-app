@@ -1,0 +1,97 @@
+import { Request, Response } from "express";
+import mongoose, { Types } from "mongoose";
+import { Event } from "../models/Event.model";
+import { CameraAssignment } from "../models/CameraAssignment.model";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError";
+import { emitToTeam } from "../sockets";
+
+export const createEvent = asyncHandler(async (req: Request, res: Response) => {
+  const { teamId, title, scheduledStart, cameraCount } = req.body;
+  const userId = new Types.ObjectId(req.user!.id);
+
+  const session = await mongoose.startSession();
+  try {
+    let eventId: Types.ObjectId;
+
+    await session.withTransaction(async () => {
+      const [event] = await Event.create(
+        [
+          {
+            teamId,
+            title,
+            scheduledStart: new Date(scheduledStart),
+            createdBy: userId,
+          },
+        ],
+        { session }
+      );
+      eventId = event._id as Types.ObjectId;
+
+      const cameraDocs = Array.from({ length: cameraCount }, (_, i) => ({
+        eventId,
+        teamId,
+        cameraNumber: i + 1,
+        label: `Camera ${i + 1}`,
+        isLive: false,
+      }));
+
+      await CameraAssignment.insertMany(cameraDocs, { session });
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully",
+      data: { eventId: eventId! },
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
+export const getTeamEvents = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.query.teamId as string | undefined;
+  if (!teamId) throw ApiError.badRequest("teamId query parameter is required");
+
+  const events = await Event.find({ teamId }).sort({ scheduledStart: -1 });
+  res.json({ success: true, data: events });
+});
+
+export const getEventDetail = asyncHandler(async (req: Request, res: Response) => {
+  const { eventId } = req.params;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+
+  const cameras = await CameraAssignment.find({ eventId }).sort({ cameraNumber: 1 });
+
+  res.json({ success: true, data: { event, cameras } });
+});
+
+/**
+ * Sets exactly one camera as live for the event, clears live status on all
+ * others, persists the change, and broadcasts it in real time to every
+ * connected phone in the team's room — this is the core tally mechanism
+ * the entire product exists around.
+ */
+export const setLiveCamera = asyncHandler(async (req: Request, res: Response) => {
+  const { eventId, cameraId } = req.params;
+  const { teamId } = req.body;
+
+  const target = await CameraAssignment.findOne({ _id: cameraId, eventId });
+  if (!target) throw ApiError.notFound("Camera assignment not found");
+
+  await CameraAssignment.updateMany({ eventId }, { isLive: false });
+  target.isLive = true;
+  await target.save();
+
+  const cameras = await CameraAssignment.find({ eventId }).sort({ cameraNumber: 1 });
+
+  emitToTeam(teamId, "tally:update", {
+    eventId,
+    liveCameraId: target._id.toString(),
+    cameras,
+  });
+
+  res.json({ success: true, data: { cameras } });
+});
