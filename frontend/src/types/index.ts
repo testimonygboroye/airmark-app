@@ -90,3 +90,18 @@ export interface ApiSuccessResponse<T> {
   data: T;
   message?: string;
 }
+
+export type SignalType = "battery_low" | "need_backup" | "audio_issue" | "custom";
+
+export interface SignalRecord {
+  _id: string;
+  eventId: string;
+  teamId: string;
+  fromUserId: { _id: string; firstName: string; lastName: string };
+  type: SignalType;
+  customText?: string;
+  acknowledged: boolean;
+  acknowledgedBy?: { _id: string; firstName: string; lastName: string };
+  acknowledgedAt?: string;
+  createdAt: string;
+}

@@ -13,6 +13,8 @@ export const PERMISSIONS = {
   ROS_MANAGE: "ros:manage",
   ROS_CONTROL: "ros:control",
   COUNTDOWN_CONTROL: "countdown:control",
+  SIGNAL_SEND: "signal:send",
+  SIGNAL_MANAGE: "signal:manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -47,13 +49,20 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.ROS_MANAGE,
       PERMISSIONS.ROS_CONTROL,
       PERMISSIONS.COUNTDOWN_CONTROL,
+      PERMISSIONS.SIGNAL_SEND,
+      PERMISSIONS.SIGNAL_MANAGE,
     ],
   },
   {
     name: "Operator",
     rank: 2,
     isSystemRole: true,
-    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW, PERMISSIONS.TALLY_VIEW],
+    permissions: [
+      PERMISSIONS.TEAM_VIEW,
+      PERMISSIONS.EVENT_VIEW,
+      PERMISSIONS.TALLY_VIEW,
+      PERMISSIONS.SIGNAL_SEND,
+    ],
   },
   {
     name: "Editor",

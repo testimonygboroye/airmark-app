@@ -5,8 +5,14 @@ import { RunOfShowControls } from "@/components/live/RunOfShowControls";
 import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { CountdownControls } from "@/components/live/CountdownControls";
+import { SignalInbox } from "@/components/live/SignalInbox";
 import { useCountdown } from "@/hooks/useCountdown";
-import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord } from "@/types";
+import type {
+  EventRecord,
+  CameraAssignmentRecord,
+  RunOfShowSegmentRecord,
+  SignalRecord,
+} from "@/types";
 
 interface Props {
   event: EventRecord;
@@ -16,6 +22,7 @@ interface Props {
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
   countdownTargetAt: string | null;
+  signals: SignalRecord[];
 }
 
 export function DirectorLiveView({
@@ -26,6 +33,7 @@ export function DirectorLiveView({
   currentSegment,
   nextSegment,
   countdownTargetAt,
+  signals,
 }: Props) {
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
@@ -41,6 +49,7 @@ export function DirectorLiveView({
   return (
     <div className="min-h-screen flex flex-col relative">
       <CountdownOverlay targetAt={countdownTargetAt} />
+      <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
 
       <header className="flex items-center justify-between px-4 py-4 border-b border-white/10">
         <div>

@@ -12,6 +12,7 @@ import type {
   EventRecord,
   CameraAssignmentRecord,
   RunOfShowSegmentRecord,
+  SignalRecord,
 } from "@/types";
 
 export function EventLivePage() {
@@ -22,6 +23,7 @@ export function EventLivePage() {
   const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [nextSegment, setNextSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [countdownTargetAt, setCountdownTargetAt] = useState<string | null>(null);
+  const [signals, setSignals] = useState<SignalRecord[]>([]);
   const [event, setEvent] = useState<EventRecord | null>(null);
 
   const { isLoading } = useQuery({
@@ -49,6 +51,15 @@ export function EventLivePage() {
   });
 
   const { hasPermission } = useTeamRole(event?.teamId);
+  const isDirector = hasPermission("tally:control");
+
+  useEffect(() => {
+    if (!isDirector || !eventId) return;
+    apiClient
+      .get<{ data: SignalRecord[] }>(`/events/${eventId}/signals`)
+      .then((res) => setSignals(res.data.data))
+      .catch(() => {});
+  }, [isDirector, eventId]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -79,12 +90,22 @@ export function EventLivePage() {
     function handleCountdownUpdate(payload: { eventId: string; targetAt: string | null }) {
       if (payload.eventId === eventId) setCountdownTargetAt(payload.targetAt);
     }
+    function handleSignalNew(payload: { eventId: string; signal: SignalRecord }) {
+      if (payload.eventId === eventId) setSignals((prev) => [payload.signal, ...prev]);
+    }
+    function handleSignalAck(payload: { eventId: string; signal: SignalRecord }) {
+      if (payload.eventId === eventId) {
+        setSignals((prev) => prev.map((s) => (s._id === payload.signal._id ? payload.signal : s)));
+      }
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
     socket.on("ros:update", handleRosUpdate);
     socket.on("ros:segments-updated", handleSegmentsUpdated);
     socket.on("countdown:update", handleCountdownUpdate);
+    socket.on("signal:new", handleSignalNew);
+    socket.on("signal:ack", handleSignalAck);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -92,6 +113,8 @@ export function EventLivePage() {
       socket.off("ros:update", handleRosUpdate);
       socket.off("ros:segments-updated", handleSegmentsUpdated);
       socket.off("countdown:update", handleCountdownUpdate);
+      socket.off("signal:new", handleSignalNew);
+      socket.off("signal:ack", handleSignalAck);
     };
   }, [eventId]);
 
@@ -104,7 +127,6 @@ export function EventLivePage() {
   }
 
   const myCamera = cameras.find((c) => c.operatorUserId?._id === user?.id);
-  const isDirector = hasPermission("tally:control");
 
   if (isDirector) {
     return (
@@ -116,6 +138,7 @@ export function EventLivePage() {
         currentSegment={currentSegment}
         nextSegment={nextSegment}
         countdownTargetAt={countdownTargetAt}
+        signals={signals}
       />
     );
   }
@@ -128,6 +151,8 @@ export function EventLivePage() {
         currentSegment={currentSegment}
         nextSegment={nextSegment}
         countdownTargetAt={countdownTargetAt}
+        eventId={eventId!}
+        teamId={event.teamId}
       />
     );
   }
