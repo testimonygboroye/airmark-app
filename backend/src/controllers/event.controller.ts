@@ -16,14 +16,7 @@ export const createEvent = asyncHandler(async (req: Request, res: Response) => {
 
     await session.withTransaction(async () => {
       const [event] = await Event.create(
-        [
-          {
-            teamId,
-            title,
-            scheduledStart: new Date(scheduledStart),
-            createdBy: userId,
-          },
-        ],
+        [{ teamId, title, scheduledStart: new Date(scheduledStart), createdBy: userId }],
         { session }
       );
       eventId = event._id as Types.ObjectId;
@@ -63,17 +56,13 @@ export const getEventDetail = asyncHandler(async (req: Request, res: Response) =
   const event = await Event.findById(eventId);
   if (!event) throw ApiError.notFound("Event not found");
 
-  const cameras = await CameraAssignment.find({ eventId }).sort({ cameraNumber: 1 });
+  const cameras = await CameraAssignment.find({ eventId })
+    .sort({ cameraNumber: 1 })
+    .populate("operatorUserId", "firstName lastName email");
 
   res.json({ success: true, data: { event, cameras } });
 });
 
-/**
- * Sets exactly one camera as live for the event, clears live status on all
- * others, persists the change, and broadcasts it in real time to every
- * connected phone in the team's room — this is the core tally mechanism
- * the entire product exists around.
- */
 export const setLiveCamera = asyncHandler(async (req: Request, res: Response) => {
   const { eventId, cameraId } = req.params;
   const { teamId } = req.body;
@@ -85,13 +74,34 @@ export const setLiveCamera = asyncHandler(async (req: Request, res: Response) =>
   target.isLive = true;
   await target.save();
 
-  const cameras = await CameraAssignment.find({ eventId }).sort({ cameraNumber: 1 });
+  const cameras = await CameraAssignment.find({ eventId })
+    .sort({ cameraNumber: 1 })
+    .populate("operatorUserId", "firstName lastName email");
 
   emitToTeam(teamId, "tally:update", {
     eventId,
     liveCameraId: target._id.toString(),
     cameras,
   });
+
+  res.json({ success: true, data: { cameras } });
+});
+
+export const assignOperator = asyncHandler(async (req: Request, res: Response) => {
+  const { eventId, cameraId } = req.params;
+  const { teamId, operatorUserId } = req.body;
+
+  const target = await CameraAssignment.findOne({ _id: cameraId, eventId });
+  if (!target) throw ApiError.notFound("Camera assignment not found");
+
+  target.operatorUserId = operatorUserId ? new Types.ObjectId(operatorUserId) : undefined;
+  await target.save();
+
+  const cameras = await CameraAssignment.find({ eventId })
+    .sort({ cameraNumber: 1 })
+    .populate("operatorUserId", "firstName lastName email");
+
+  emitToTeam(teamId, "cameras:update", { eventId, cameras });
 
   res.json({ success: true, data: { cameras } });
 });

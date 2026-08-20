@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { SetupLayout } from "@/layouts/SetupLayout";
+import { LiveLayout } from "@/layouts/LiveLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 import { LoginPage } from "@/pages/auth/LoginPage";
@@ -10,6 +11,10 @@ import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { DashboardPage } from "@/pages/setup/DashboardPage";
 import { CreateTeamPage } from "@/pages/setup/CreateTeamPage";
+import { EventsListPage } from "@/pages/setup/EventsListPage";
+import { CreateEventPage } from "@/pages/setup/CreateEventPage";
+import { EventDetailPage } from "@/pages/setup/EventDetailPage";
+import { EventLivePage } from "@/pages/live/EventLivePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export function AppRouter() {
@@ -18,7 +23,6 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Public — Auth Layout */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -27,7 +31,6 @@ export function AppRouter() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
-        {/* Protected — Setup/Review Mode Layout */}
         <Route
           element={
             <ProtectedRoute>
@@ -37,9 +40,20 @@ export function AppRouter() {
         >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/teams/new" element={<CreateTeamPage />} />
+          <Route path="/teams/:teamId/events" element={<EventsListPage />} />
+          <Route path="/teams/:teamId/events/new" element={<CreateEventPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
         </Route>
 
-        {/* Live Mode routes will be added here as Tier 2 live features are built */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <LiveLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/events/:eventId/live" element={<EventLivePage />} />
+        </Route>
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

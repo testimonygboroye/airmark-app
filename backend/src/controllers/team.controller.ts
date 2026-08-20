@@ -32,11 +32,7 @@ export const createTeam = asyncHandler(async (req: Request, res: Response) => {
       );
       teamId = team._id as Types.ObjectId;
 
-      const { ownerRoleId } = await seedDefaultRolesForTeam(
-        teamId,
-        userId,
-        session
-      );
+      const { ownerRoleId } = await seedDefaultRolesForTeam(teamId, userId, session);
 
       await Membership.create(
         [
@@ -67,6 +63,16 @@ export const getMyTeams = asyncHandler(async (req: Request, res: Response) => {
     userId: req.user!.id,
     status: "active",
   }).populate("teamId roleId");
+
+  res.json({ success: true, data: memberships });
+});
+
+export const getTeamMembers = asyncHandler(async (req: Request, res: Response) => {
+  const { teamId } = req.params;
+
+  const memberships = await Membership.find({ teamId, status: "active" })
+    .populate("userId", "firstName lastName email")
+    .populate("roleId", "name rank");
 
   res.json({ success: true, data: memberships });
 });
