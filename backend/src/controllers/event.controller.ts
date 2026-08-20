@@ -70,7 +70,14 @@ export const getEventDetail = asyncHandler(async (req: Request, res: Response) =
 
   res.json({
     success: true,
-    data: { event, cameras, segments, currentSegment, nextSegment },
+    data: {
+      event,
+      cameras,
+      segments,
+      currentSegment,
+      nextSegment,
+      countdownTargetAt: event.countdownTargetAt ?? null,
+    },
   });
 });
 

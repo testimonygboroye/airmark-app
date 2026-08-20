@@ -21,6 +21,7 @@ export function EventLivePage() {
   const [segments, setSegments] = useState<RunOfShowSegmentRecord[]>([]);
   const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [nextSegment, setNextSegment] = useState<RunOfShowSegmentRecord | null>(null);
+  const [countdownTargetAt, setCountdownTargetAt] = useState<string | null>(null);
   const [event, setEvent] = useState<EventRecord | null>(null);
 
   const { isLoading } = useQuery({
@@ -33,6 +34,7 @@ export function EventLivePage() {
           segments: RunOfShowSegmentRecord[];
           currentSegment: RunOfShowSegmentRecord | null;
           nextSegment: RunOfShowSegmentRecord | null;
+          countdownTargetAt: string | null;
         };
       }>(`/events/${eventId}`);
       setEvent(res.data.data.event);
@@ -40,6 +42,7 @@ export function EventLivePage() {
       setSegments(res.data.data.segments);
       setCurrentSegment(res.data.data.currentSegment);
       setNextSegment(res.data.data.nextSegment);
+      setCountdownTargetAt(res.data.data.countdownTargetAt);
       return res.data.data;
     },
     enabled: !!eventId,
@@ -73,17 +76,22 @@ export function EventLivePage() {
     }) {
       if (payload.eventId === eventId) setSegments(payload.segments);
     }
+    function handleCountdownUpdate(payload: { eventId: string; targetAt: string | null }) {
+      if (payload.eventId === eventId) setCountdownTargetAt(payload.targetAt);
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
     socket.on("ros:update", handleRosUpdate);
     socket.on("ros:segments-updated", handleSegmentsUpdated);
+    socket.on("countdown:update", handleCountdownUpdate);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
       socket.off("cameras:update", handleCamerasUpdate);
       socket.off("ros:update", handleRosUpdate);
       socket.off("ros:segments-updated", handleSegmentsUpdated);
+      socket.off("countdown:update", handleCountdownUpdate);
     };
   }, [eventId]);
 
@@ -107,6 +115,7 @@ export function EventLivePage() {
         segments={segments}
         currentSegment={currentSegment}
         nextSegment={nextSegment}
+        countdownTargetAt={countdownTargetAt}
       />
     );
   }
@@ -118,6 +127,7 @@ export function EventLivePage() {
         cameras={cameras}
         currentSegment={currentSegment}
         nextSegment={nextSegment}
+        countdownTargetAt={countdownTargetAt}
       />
     );
   }

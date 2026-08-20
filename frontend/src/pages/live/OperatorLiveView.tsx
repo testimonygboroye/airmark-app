@@ -1,4 +1,5 @@
 import { SegmentBanner } from "@/components/live/SegmentBanner";
+import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import type { CameraAssignmentRecord, RunOfShowSegmentRecord } from "@/types";
 
 interface Props {
@@ -6,17 +7,26 @@ interface Props {
   cameras: CameraAssignmentRecord[];
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
+  countdownTargetAt: string | null;
 }
 
-export function OperatorLiveView({ camera, cameras, currentSegment, nextSegment }: Props) {
+export function OperatorLiveView({
+  camera,
+  cameras,
+  currentSegment,
+  nextSegment,
+  countdownTargetAt,
+}: Props) {
   const liveCamera = cameras.find((c) => c.isLive);
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${
+      className={`min-h-screen flex flex-col relative transition-colors duration-300 ${
         camera.isLive ? "bg-signal-red" : "bg-navy"
       }`}
     >
+      <CountdownOverlay targetAt={countdownTargetAt} />
+
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
       <div className="flex-1 flex flex-col items-center justify-center">

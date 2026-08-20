@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as eventController from "../controllers/event.controller";
 import runOfShowRoutes from "./runOfShow.routes";
+import countdownRoutes from "./countdown.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
@@ -40,5 +41,6 @@ router.patch(
 );
 
 router.use("/:eventId/segments", runOfShowRoutes);
+router.use("/:eventId/countdown", countdownRoutes);
 
 export default router;

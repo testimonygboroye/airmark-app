@@ -3,6 +3,9 @@ import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { RunOfShowControls } from "@/components/live/RunOfShowControls";
 import { SegmentBanner } from "@/components/live/SegmentBanner";
+import { CountdownOverlay } from "@/components/live/CountdownOverlay";
+import { CountdownControls } from "@/components/live/CountdownControls";
+import { useCountdown } from "@/hooks/useCountdown";
 import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord } from "@/types";
 
 interface Props {
@@ -12,6 +15,7 @@ interface Props {
   segments: RunOfShowSegmentRecord[];
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
+  countdownTargetAt: string | null;
 }
 
 export function DirectorLiveView({
@@ -21,8 +25,10 @@ export function DirectorLiveView({
   segments,
   currentSegment,
   nextSegment,
+  countdownTargetAt,
 }: Props) {
   const navigate = useNavigate();
+  const { isActive: countdownActive } = useCountdown(countdownTargetAt);
 
   const setLiveMutation = useMutation({
     mutationFn: async (cameraId: string) => {
@@ -33,18 +39,23 @@ export function DirectorLiveView({
   });
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <CountdownOverlay targetAt={countdownTargetAt} />
+
       <header className="flex items-center justify-between px-4 py-4 border-b border-white/10">
         <div>
           <p className="text-xs text-surface-light/50 uppercase tracking-wide">Director</p>
           <h1 className="font-display font-semibold">{event.title}</h1>
         </div>
-        <button
-          onClick={() => navigate(-1)}
-          className="text-xs text-surface-light/60 font-medium px-3 py-1.5 rounded-lg border border-white/15"
-        >
-          Exit
-        </button>
+        <div className="flex items-center gap-2">
+          <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
+          <button
+            onClick={() => navigate(-1)}
+            className="text-xs text-surface-light/60 font-medium px-3 py-1.5 rounded-lg border border-white/15"
+          >
+            Exit
+          </button>
+        </div>
       </header>
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
