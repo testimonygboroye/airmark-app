@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { useAuthStore } from "@/store/authStore";
@@ -12,6 +12,8 @@ import { Logo } from "@/components/brand/Logo";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const justLoggedOut = searchParams.get("loggedOut") === "1";
   const setAuth = useAuthStore((s) => s.setAuth);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,12 @@ export function LoginPage() {
         <Logo />
         <h1 className="font-display text-xl font-semibold mt-6 mb-1">Welcome back</h1>
         <p className="text-sm text-standby-slate mb-6">Log in to your Airmark account.</p>
+
+        {justLoggedOut && (
+          <div className="mb-4 rounded-lg bg-accent-teal/10 border border-accent-teal/30 px-4 py-3 text-sm text-accent-teal font-medium">
+            You've been logged out successfully.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input

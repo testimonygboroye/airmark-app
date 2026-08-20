@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // sends the httpOnly refresh cookie automatically
+  withCredentials: true,
   timeout: 60000, // accommodates Render free-tier cold starts (up to ~60s)
 });
 
@@ -30,13 +30,16 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
+    // Login, register, verify-email, forgot/reset-password, and refresh
+    // itself must NEVER trigger the silent-refresh-retry flow — a 401 from
+    // any of these is a real, final answer (e.g. wrong password) and must
+    // be shown to the user as-is, not swallowed by a refresh attempt.
     const isAuthRoute = originalRequest?.url?.includes("/auth/");
-    const isRefreshRoute = originalRequest?.url?.includes("/auth/refresh");
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isRefreshRoute
+      !isAuthRoute
     ) {
       originalRequest._retry = true;
 
@@ -59,9 +62,7 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         pendingQueue = [];
         useAuthStore.getState().clearAuth();
-        if (!isAuthRoute) {
-          window.location.href = "/login";
-        }
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }

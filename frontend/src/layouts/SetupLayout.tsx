@@ -22,7 +22,7 @@ export function SetupLayout() {
     } finally {
       disconnectSocket();
       clearAuth();
-      navigate("/login");
+      navigate("/login?loggedOut=1");
     }
   }
 
