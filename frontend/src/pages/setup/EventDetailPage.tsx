@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { apiClient } from "@/lib/apiClient";
-import { getErrorMessage } from "@/lib/errors";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useTeamRole } from "@/hooks/useTeamRole";
