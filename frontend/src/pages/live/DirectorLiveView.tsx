@@ -8,12 +8,15 @@ import { CountdownControls } from "@/components/live/CountdownControls";
 import { SignalInbox } from "@/components/live/SignalInbox";
 import { TalkbackControls } from "@/components/live/TalkbackControls";
 import { MarkButton } from "@/components/live/MarkButton";
+import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
+import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
   CameraAssignmentRecord,
   RunOfShowSegmentRecord,
   SignalRecord,
+  ObsConnectionRecord,
 } from "@/types";
 
 interface Props {
@@ -25,6 +28,7 @@ interface Props {
   nextSegment: RunOfShowSegmentRecord | null;
   countdownTargetAt: string | null;
   signals: SignalRecord[];
+  obsConnection: ObsConnectionRecord;
 }
 
 export function DirectorLiveView({
@@ -36,6 +40,7 @@ export function DirectorLiveView({
   nextSegment,
   countdownTargetAt,
   signals,
+  obsConnection,
 }: Props) {
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
@@ -66,12 +71,12 @@ export function DirectorLiveView({
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
 
-      <header className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+      <header className="flex items-center justify-between px-4 py-4 border-b border-white/10 flex-wrap gap-2">
         <div>
           <p className="text-xs text-surface-light/50 uppercase tracking-wide">Director</p>
           <h1 className="font-display font-semibold">{event.title}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {event.status !== "live" && event.status !== "ended" && (
             <button
               onClick={() => startMutation.mutate()}
@@ -90,6 +95,11 @@ export function DirectorLiveView({
               End Event
             </button>
           )}
+          <ObsPairingPanel
+            eventId={eventId}
+            teamId={event.teamId}
+            connected={obsConnection.status === "connected"}
+          />
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
           <button
@@ -134,6 +144,15 @@ export function DirectorLiveView({
           ))}
         </div>
       </div>
+
+      {obsConnection.status === "connected" && (
+        <ObsSceneSwitcher
+          eventId={eventId}
+          teamId={event.teamId}
+          scenes={obsConnection.scenes}
+          currentProgramScene={obsConnection.currentProgramScene}
+        />
+      )}
 
       <RunOfShowControls
         eventId={eventId}

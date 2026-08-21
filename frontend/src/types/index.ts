@@ -172,3 +172,15 @@ export interface ScheduleAssignmentRecord {
   date: string;
   note?: string;
 }
+
+export interface ObsSceneRecord {
+  sceneName: string;
+  sceneIndex: number;
+}
+
+export interface ObsConnectionRecord {
+  status: "connected" | "disconnected";
+  obsVersion?: string;
+  currentProgramScene?: string;
+  scenes: ObsSceneRecord[];
+}

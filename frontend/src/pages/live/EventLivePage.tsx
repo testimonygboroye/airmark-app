@@ -14,6 +14,7 @@ import type {
   RunOfShowSegmentRecord,
   SignalRecord,
   TalkbackMessageRecord,
+  ObsConnectionRecord,
 } from "@/types";
 
 export function EventLivePage() {
@@ -26,6 +27,10 @@ export function EventLivePage() {
   const [countdownTargetAt, setCountdownTargetAt] = useState<string | null>(null);
   const [signals, setSignals] = useState<SignalRecord[]>([]);
   const [latestTalkback, setLatestTalkback] = useState<TalkbackMessageRecord | null>(null);
+  const [obsConnection, setObsConnection] = useState<ObsConnectionRecord>({
+    status: "disconnected",
+    scenes: [],
+  });
   const [event, setEvent] = useState<EventRecord | null>(null);
 
   const { isLoading } = useQuery({
@@ -54,6 +59,7 @@ export function EventLivePage() {
 
   const { hasPermission } = useTeamRole(event?.teamId);
   const isDirector = hasPermission("tally:control");
+  const canControlObs = hasPermission("obs:control");
 
   useEffect(() => {
     if (!isDirector || !eventId) return;
@@ -62,6 +68,16 @@ export function EventLivePage() {
       .then((res) => setSignals(res.data.data))
       .catch(() => {});
   }, [isDirector, eventId]);
+
+  useEffect(() => {
+    if (!canControlObs || !eventId || !event?.teamId) return;
+    apiClient
+      .get<{ data: ObsConnectionRecord }>(`/events/${eventId}/obs/status`, {
+        params: { teamId: event.teamId },
+      })
+      .then((res) => setObsConnection(res.data.data))
+      .catch(() => {});
+  }, [canControlObs, eventId, event?.teamId]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -105,6 +121,29 @@ export function EventLivePage() {
         setLatestTalkback(payload.message);
       }
     }
+    function handleObsStatus(payload: { eventId: string; status: "connected" | "disconnected" }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, status: payload.status }));
+      }
+    }
+    function handleObsScenesUpdate(payload: {
+      eventId: string;
+      scenes: { sceneName: string; sceneIndex: number }[];
+      currentProgramScene: string;
+    }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({
+          ...prev,
+          scenes: payload.scenes,
+          currentProgramScene: payload.currentProgramScene,
+        }));
+      }
+    }
+    function handleObsSceneChanged(payload: { eventId: string; currentProgramScene: string }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
+      }
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
@@ -114,6 +153,9 @@ export function EventLivePage() {
     socket.on("signal:new", handleSignalNew);
     socket.on("signal:ack", handleSignalAck);
     socket.on("talkback:new", handleTalkbackNew);
+    socket.on("obs:status", handleObsStatus);
+    socket.on("obs:scenes-update", handleObsScenesUpdate);
+    socket.on("obs:scene-changed", handleObsSceneChanged);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -124,6 +166,9 @@ export function EventLivePage() {
       socket.off("signal:new", handleSignalNew);
       socket.off("signal:ack", handleSignalAck);
       socket.off("talkback:new", handleTalkbackNew);
+      socket.off("obs:status", handleObsStatus);
+      socket.off("obs:scenes-update", handleObsScenesUpdate);
+      socket.off("obs:scene-changed", handleObsSceneChanged);
     };
   }, [eventId, user?.id]);
 
@@ -148,6 +193,7 @@ export function EventLivePage() {
         nextSegment={nextSegment}
         countdownTargetAt={countdownTargetAt}
         signals={signals}
+        obsConnection={obsConnection}
       />
     );
   }
