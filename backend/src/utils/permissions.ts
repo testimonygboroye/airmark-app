@@ -22,6 +22,8 @@ export const PERMISSIONS = {
   EQUIPMENT_MANAGE: "equipment:manage",
   CHECKLIST_MANAGE: "checklist:manage",
   CHECKLIST_COMPLETE: "checklist:complete",
+  SCHEDULE_MANAGE: "schedule:manage",
+  SCHEDULE_VIEW: "schedule:view",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -65,6 +67,8 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.EQUIPMENT_MANAGE,
       PERMISSIONS.CHECKLIST_MANAGE,
       PERMISSIONS.CHECKLIST_COMPLETE,
+      PERMISSIONS.SCHEDULE_MANAGE,
+      PERMISSIONS.SCHEDULE_VIEW,
     ],
   },
   {
@@ -79,6 +83,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.HIGHLIGHT_CREATE,
       PERMISSIONS.EQUIPMENT_REPORT,
       PERMISSIONS.CHECKLIST_COMPLETE,
+      PERMISSIONS.SCHEDULE_VIEW,
     ],
   },
   {
@@ -90,12 +95,18 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.EVENT_VIEW,
       PERMISSIONS.HIGHLIGHT_VIEW,
       PERMISSIONS.CHECKLIST_COMPLETE,
+      PERMISSIONS.SCHEDULE_VIEW,
     ],
   },
   {
     name: "Viewer",
     rank: 3,
     isSystemRole: true,
-    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW, PERMISSIONS.TALLY_VIEW],
+    permissions: [
+      PERMISSIONS.TEAM_VIEW,
+      PERMISSIONS.EVENT_VIEW,
+      PERMISSIONS.TALLY_VIEW,
+      PERMISSIONS.SCHEDULE_VIEW,
+    ],
   },
 ];

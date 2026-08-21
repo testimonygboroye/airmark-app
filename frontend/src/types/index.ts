@@ -163,3 +163,12 @@ export interface ReadinessEntry {
   totalItems: number;
   completedItems: number;
 }
+
+export interface ScheduleAssignmentRecord {
+  _id: string;
+  teamId: string;
+  userId: { _id: string; firstName: string; lastName: string };
+  roleId: { _id: string; name: string };
+  date: string;
+  note?: string;
+}

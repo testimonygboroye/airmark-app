@@ -20,6 +20,7 @@ import { EquipmentStatusPage } from "@/pages/setup/EquipmentStatusPage";
 import { EventChecklistPage } from "@/pages/setup/EventChecklistPage";
 import { EventReadinessPage } from "@/pages/setup/EventReadinessPage";
 import { ChecklistTemplateEditorPage } from "@/pages/setup/ChecklistTemplateEditorPage";
+import { SchedulePage } from "@/pages/setup/SchedulePage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -49,6 +50,7 @@ export function AppRouter() {
           <Route path="/teams/:teamId/events" element={<EventsListPage />} />
           <Route path="/teams/:teamId/events/new" element={<CreateEventPage />} />
           <Route path="/teams/:teamId/checklist-templates" element={<ChecklistTemplateEditorPage />} />
+          <Route path="/teams/:teamId/schedule" element={<SchedulePage />} />
           <Route path="/events/:eventId" element={<EventDetailPage />} />
           <Route path="/events/:eventId/run-of-show" element={<RunOfShowEditorPage />} />
           <Route path="/events/:eventId/highlights" element={<HighlightsPage />} />

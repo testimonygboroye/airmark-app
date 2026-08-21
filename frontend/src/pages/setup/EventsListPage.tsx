@@ -25,11 +25,16 @@ export function EventsListPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-semibold">Events</h1>
-        {hasPermission("event:create") && (
-          <Link to={`/teams/${teamId}/events/new`}>
-            <Button>+ New event</Button>
+        <div className="flex gap-2">
+          <Link to={`/teams/${teamId}/schedule`}>
+            <Button variant="secondary">Schedule</Button>
           </Link>
-        )}
+          {hasPermission("event:create") && (
+            <Link to={`/teams/${teamId}/events/new`}>
+              <Button>+ New event</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {isLoading && <p className="text-sm text-standby-slate">Loading…</p>}
