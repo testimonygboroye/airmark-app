@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   CHECKLIST_COMPLETE: "checklist:complete",
   SCHEDULE_MANAGE: "schedule:manage",
   SCHEDULE_VIEW: "schedule:view",
+  OBS_CONTROL: "obs:control",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -69,6 +70,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.CHECKLIST_COMPLETE,
       PERMISSIONS.SCHEDULE_MANAGE,
       PERMISSIONS.SCHEDULE_VIEW,
+      PERMISSIONS.OBS_CONTROL,
     ],
   },
   {

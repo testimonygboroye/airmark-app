@@ -2,7 +2,8 @@ import http from "http";
 import { env } from "./config/env";
 import { createApp } from "./app";
 import { connectDatabase } from "./config/database";
-import { initializeSocketServer } from "./sockets";
+import { initializeSocketServer, getSocketServer } from "./sockets";
+import { initializeObsBridgeNamespace } from "./sockets/obsBridge.socket";
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
@@ -11,6 +12,7 @@ async function bootstrap(): Promise<void> {
   const httpServer = http.createServer(app);
 
   initializeSocketServer(httpServer);
+  initializeObsBridgeNamespace(getSocketServer());
 
   httpServer.listen(env.PORT, () => {
     console.log(`[server] Airmark backend running on port ${env.PORT} (${env.NODE_ENV})`);

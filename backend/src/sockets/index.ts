@@ -12,9 +12,6 @@ export function initializeSocketServer(httpServer: HttpServer): SocketServer {
       origin: env.CLIENT_URL,
       credentials: true,
     },
-    // Aggressive but reasonable reconnect-friendly timings — a phone losing
-    // signal briefly during a live event must not be treated as a full
-    // disconnect prematurely.
     pingInterval: 10000,
     pingTimeout: 20000,
   });
@@ -27,9 +24,6 @@ export function initializeSocketServer(httpServer: HttpServer): SocketServer {
 
     console.log(`[socket] connected: user=${userId} socket=${socket.id}`);
 
-    // Auto-join every team room this user is an active member of, so
-    // reconnects immediately resync into the right broadcast channels
-    // without any extra client-side handshake step.
     try {
       const memberships = await Membership.find({
         userId,
@@ -55,10 +49,6 @@ export function initializeSocketServer(httpServer: HttpServer): SocketServer {
   return io;
 }
 
-/**
- * Feature modules call this to emit into a specific team's room without
- * needing direct access to the raw Socket.IO instance.
- */
 export function emitToTeam(teamId: string, event: string, payload: unknown): void {
   if (!io) {
     console.warn("[socket] emitToTeam called before initialization");

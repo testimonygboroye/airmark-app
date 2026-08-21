@@ -67,5 +67,6 @@ router.use("/:eventId/talkback", talkbackRoutes);
 router.use("/:eventId/highlights", highlightRoutes);
 router.use("/:eventId/equipment", equipmentRoutes);
 router.use("/:eventId/checklist", eventChecklistRouter);
+router.use("/:eventId/obs", obsRoutes);
 
 export default router;
