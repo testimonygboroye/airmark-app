@@ -56,6 +56,8 @@ export function EventDetailPage() {
   const canManageRos = hasPermission("ros:manage");
   const canViewHighlights = hasPermission("highlight:view");
   const canViewEquipment = hasPermission("equipment:manage");
+  const canCompleteChecklist = hasPermission("checklist:complete");
+  const canViewReadiness = hasPermission("checklist:manage");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -85,7 +87,23 @@ export function EventDetailPage() {
               </Link>
             )}
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 justify-end">
+            {canCompleteChecklist && (
+              <Link
+                to={`/events/${event._id}/checklist`}
+                className="text-xs text-accent-teal font-medium"
+              >
+                My checklist
+              </Link>
+            )}
+            {canViewReadiness && (
+              <Link
+                to={`/events/${event._id}/readiness`}
+                className="text-xs text-accent-teal font-medium"
+              >
+                Crew readiness
+              </Link>
+            )}
             {canViewHighlights && (
               <Link
                 to={`/events/${event._id}/highlights`}

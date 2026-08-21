@@ -149,3 +149,17 @@ export interface EquipmentIssueRecord {
   resolvedAt?: string;
   createdAt: string;
 }
+
+export interface ChecklistItemState {
+  itemId: string;
+  text: string;
+  completed: boolean;
+}
+
+export interface ReadinessEntry {
+  userId: string;
+  name: string;
+  role: string;
+  totalItems: number;
+  completedItems: number;
+}

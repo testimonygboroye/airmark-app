@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as teamController from "../controllers/team.controller";
+import { teamChecklistRouter } from "./checklist.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
@@ -16,5 +17,6 @@ router.get(
   requirePermission(PERMISSIONS.TEAM_VIEW),
   teamController.getTeamMembers
 );
+router.use("/:teamId/checklist-templates", teamChecklistRouter);
 
 export default router;

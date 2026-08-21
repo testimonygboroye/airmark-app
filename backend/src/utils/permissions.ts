@@ -20,6 +20,8 @@ export const PERMISSIONS = {
   HIGHLIGHT_VIEW: "highlight:view",
   EQUIPMENT_REPORT: "equipment:report",
   EQUIPMENT_MANAGE: "equipment:manage",
+  CHECKLIST_MANAGE: "checklist:manage",
+  CHECKLIST_COMPLETE: "checklist:complete",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -61,6 +63,8 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.HIGHLIGHT_VIEW,
       PERMISSIONS.EQUIPMENT_REPORT,
       PERMISSIONS.EQUIPMENT_MANAGE,
+      PERMISSIONS.CHECKLIST_MANAGE,
+      PERMISSIONS.CHECKLIST_COMPLETE,
     ],
   },
   {
@@ -74,6 +78,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.SIGNAL_SEND,
       PERMISSIONS.HIGHLIGHT_CREATE,
       PERMISSIONS.EQUIPMENT_REPORT,
+      PERMISSIONS.CHECKLIST_COMPLETE,
     ],
   },
   {
@@ -84,6 +89,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.TEAM_VIEW,
       PERMISSIONS.EVENT_VIEW,
       PERMISSIONS.HIGHLIGHT_VIEW,
+      PERMISSIONS.CHECKLIST_COMPLETE,
     ],
   },
   {
