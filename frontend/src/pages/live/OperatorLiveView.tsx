@@ -1,7 +1,8 @@
 import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { SignalButton } from "@/components/live/SignalButton";
-import type { CameraAssignmentRecord, RunOfShowSegmentRecord } from "@/types";
+import { TalkbackBanner } from "@/components/live/TalkbackBanner";
+import type { CameraAssignmentRecord, RunOfShowSegmentRecord, TalkbackMessageRecord } from "@/types";
 
 interface Props {
   camera: CameraAssignmentRecord;
@@ -11,6 +12,7 @@ interface Props {
   countdownTargetAt: string | null;
   eventId: string;
   teamId: string;
+  latestTalkback: TalkbackMessageRecord | null;
 }
 
 export function OperatorLiveView({
@@ -21,6 +23,7 @@ export function OperatorLiveView({
   countdownTargetAt,
   eventId,
   teamId,
+  latestTalkback,
 }: Props) {
   const liveCamera = cameras.find((c) => c.isLive);
 
@@ -31,6 +34,7 @@ export function OperatorLiveView({
       }`}
     >
       <CountdownOverlay targetAt={countdownTargetAt} />
+      <TalkbackBanner message={latestTalkback} />
       <SignalButton eventId={eventId} teamId={teamId} />
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />

@@ -15,6 +15,7 @@ export const PERMISSIONS = {
   COUNTDOWN_CONTROL: "countdown:control",
   SIGNAL_SEND: "signal:send",
   SIGNAL_MANAGE: "signal:manage",
+  TALKBACK_SEND: "talkback:send",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -51,6 +52,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.COUNTDOWN_CONTROL,
       PERMISSIONS.SIGNAL_SEND,
       PERMISSIONS.SIGNAL_MANAGE,
+      PERMISSIONS.TALKBACK_SEND,
     ],
   },
   {

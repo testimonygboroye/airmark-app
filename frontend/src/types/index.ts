@@ -105,3 +105,13 @@ export interface SignalRecord {
   acknowledgedAt?: string;
   createdAt: string;
 }
+
+export interface TalkbackMessageRecord {
+  _id: string;
+  eventId: string;
+  teamId: string;
+  toUserId: string;
+  fromUserId: { _id: string; firstName: string; lastName: string };
+  text: string;
+  createdAt: string;
+}

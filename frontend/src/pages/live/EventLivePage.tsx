@@ -13,6 +13,7 @@ import type {
   CameraAssignmentRecord,
   RunOfShowSegmentRecord,
   SignalRecord,
+  TalkbackMessageRecord,
 } from "@/types";
 
 export function EventLivePage() {
@@ -24,6 +25,7 @@ export function EventLivePage() {
   const [nextSegment, setNextSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [countdownTargetAt, setCountdownTargetAt] = useState<string | null>(null);
   const [signals, setSignals] = useState<SignalRecord[]>([]);
+  const [latestTalkback, setLatestTalkback] = useState<TalkbackMessageRecord | null>(null);
   const [event, setEvent] = useState<EventRecord | null>(null);
 
   const { isLoading } = useQuery({
@@ -98,6 +100,11 @@ export function EventLivePage() {
         setSignals((prev) => prev.map((s) => (s._id === payload.signal._id ? payload.signal : s)));
       }
     }
+    function handleTalkbackNew(payload: { eventId: string; message: TalkbackMessageRecord }) {
+      if (payload.eventId === eventId && payload.message.toUserId === user?.id) {
+        setLatestTalkback(payload.message);
+      }
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
@@ -106,6 +113,7 @@ export function EventLivePage() {
     socket.on("countdown:update", handleCountdownUpdate);
     socket.on("signal:new", handleSignalNew);
     socket.on("signal:ack", handleSignalAck);
+    socket.on("talkback:new", handleTalkbackNew);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -115,8 +123,9 @@ export function EventLivePage() {
       socket.off("countdown:update", handleCountdownUpdate);
       socket.off("signal:new", handleSignalNew);
       socket.off("signal:ack", handleSignalAck);
+      socket.off("talkback:new", handleTalkbackNew);
     };
-  }, [eventId]);
+  }, [eventId, user?.id]);
 
   if (isLoading || !event) {
     return (
@@ -153,6 +162,7 @@ export function EventLivePage() {
         countdownTargetAt={countdownTargetAt}
         eventId={eventId!}
         teamId={event.teamId}
+        latestTalkback={latestTalkback}
       />
     );
   }

@@ -6,6 +6,7 @@ import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { CountdownControls } from "@/components/live/CountdownControls";
 import { SignalInbox } from "@/components/live/SignalInbox";
+import { TalkbackControls } from "@/components/live/TalkbackControls";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -57,6 +58,7 @@ export function DirectorLiveView({
           <h1 className="font-display font-semibold">{event.title}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
           <button
             onClick={() => navigate(-1)}
