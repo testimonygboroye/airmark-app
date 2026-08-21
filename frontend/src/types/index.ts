@@ -115,3 +115,21 @@ export interface TalkbackMessageRecord {
   text: string;
   createdAt: string;
 }
+
+export interface HighlightMarkerRecord {
+  _id: string;
+  eventId: string;
+  teamId: string;
+  createdBy: { _id: string; firstName: string; lastName: string };
+  label?: string;
+  offsetSeconds: number;
+  createdAt: string;
+}
+
+export function formatOffset(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}

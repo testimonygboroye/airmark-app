@@ -10,6 +10,8 @@ export interface IEvent extends Document {
   status: EventStatus;
   currentSegmentId?: Types.ObjectId;
   countdownTargetAt?: Date;
+  actualStartAt?: Date;
+  endedAt?: Date;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +30,8 @@ const eventSchema = new Schema<IEvent>(
     },
     currentSegmentId: { type: Schema.Types.ObjectId, ref: "RunOfShowSegment" },
     countdownTargetAt: { type: Date },
+    actualStartAt: { type: Date },
+    endedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

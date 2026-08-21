@@ -2,6 +2,7 @@ import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { SignalButton } from "@/components/live/SignalButton";
 import { TalkbackBanner } from "@/components/live/TalkbackBanner";
+import { MarkButton } from "@/components/live/MarkButton";
 import type { CameraAssignmentRecord, RunOfShowSegmentRecord, TalkbackMessageRecord } from "@/types";
 
 interface Props {
@@ -36,6 +37,7 @@ export function OperatorLiveView({
       <CountdownOverlay targetAt={countdownTargetAt} />
       <TalkbackBanner message={latestTalkback} />
       <SignalButton eventId={eventId} teamId={teamId} />
+      <MarkButton eventId={eventId} teamId={teamId} />
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 

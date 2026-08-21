@@ -15,6 +15,7 @@ import { EventsListPage } from "@/pages/setup/EventsListPage";
 import { CreateEventPage } from "@/pages/setup/CreateEventPage";
 import { EventDetailPage } from "@/pages/setup/EventDetailPage";
 import { RunOfShowEditorPage } from "@/pages/setup/RunOfShowEditorPage";
+import { HighlightsPage } from "@/pages/setup/HighlightsPage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -45,6 +46,7 @@ export function AppRouter() {
           <Route path="/teams/:teamId/events/new" element={<CreateEventPage />} />
           <Route path="/events/:eventId" element={<EventDetailPage />} />
           <Route path="/events/:eventId/run-of-show" element={<RunOfShowEditorPage />} />
+          <Route path="/events/:eventId/highlights" element={<HighlightsPage />} />
         </Route>
 
         <Route

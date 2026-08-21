@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   SIGNAL_SEND: "signal:send",
   SIGNAL_MANAGE: "signal:manage",
   TALKBACK_SEND: "talkback:send",
+  HIGHLIGHT_CREATE: "highlight:create",
+  HIGHLIGHT_VIEW: "highlight:view",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -53,6 +55,8 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.SIGNAL_SEND,
       PERMISSIONS.SIGNAL_MANAGE,
       PERMISSIONS.TALKBACK_SEND,
+      PERMISSIONS.HIGHLIGHT_CREATE,
+      PERMISSIONS.HIGHLIGHT_VIEW,
     ],
   },
   {
@@ -64,13 +68,18 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.EVENT_VIEW,
       PERMISSIONS.TALLY_VIEW,
       PERMISSIONS.SIGNAL_SEND,
+      PERMISSIONS.HIGHLIGHT_CREATE,
     ],
   },
   {
     name: "Editor",
     rank: 2,
     isSystemRole: true,
-    permissions: [PERMISSIONS.TEAM_VIEW, PERMISSIONS.EVENT_VIEW],
+    permissions: [
+      PERMISSIONS.TEAM_VIEW,
+      PERMISSIONS.EVENT_VIEW,
+      PERMISSIONS.HIGHLIGHT_VIEW,
+    ],
   },
   {
     name: "Viewer",

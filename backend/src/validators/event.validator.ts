@@ -29,3 +29,12 @@ export const assignOperatorSchema = z.object({
     cameraId: z.string().min(1),
   }),
 });
+
+export const eventStatusSchema = z.object({
+  body: z.object({
+    teamId: z.string().min(1),
+  }),
+  params: z.object({
+    eventId: z.string().min(1),
+  }),
+});

@@ -52,7 +52,7 @@ export const getTeamEvents = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getEventDetail = asyncHandler(async (req: Request, res: Response) => {
-  const { eventId } = req.params;
+  const eventId = req.params.eventId as string;
 
   const event = await Event.findById(eventId);
   if (!event) throw ApiError.notFound("Event not found");
@@ -82,7 +82,8 @@ export const getEventDetail = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const setLiveCamera = asyncHandler(async (req: Request, res: Response) => {
-  const { eventId, cameraId } = req.params;
+  const eventId = req.params.eventId as string;
+  const cameraId = req.params.cameraId as string;
   const { teamId } = req.body;
 
   const target = await CameraAssignment.findOne({ _id: cameraId, eventId });
@@ -106,7 +107,8 @@ export const setLiveCamera = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const assignOperator = asyncHandler(async (req: Request, res: Response) => {
-  const { eventId, cameraId } = req.params;
+  const eventId = req.params.eventId as string;
+  const cameraId = req.params.cameraId as string;
   const { teamId, operatorUserId } = req.body;
 
   const target = await CameraAssignment.findOne({ _id: cameraId, eventId });
@@ -122,4 +124,44 @@ export const assignOperator = asyncHandler(async (req: Request, res: Response) =
   emitToTeam(teamId, "cameras:update", { eventId, cameras });
 
   res.json({ success: true, data: { cameras } });
+});
+
+export const startEvent = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { teamId } = req.body;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+
+  event.status = "live";
+  event.actualStartAt = event.actualStartAt ?? new Date();
+  await event.save();
+
+  emitToTeam(teamId, "event:status-update", {
+    eventId,
+    status: event.status,
+    actualStartAt: event.actualStartAt,
+  });
+
+  res.json({ success: true, data: { status: event.status, actualStartAt: event.actualStartAt } });
+});
+
+export const endEvent = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { teamId } = req.body;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+
+  event.status = "ended";
+  event.endedAt = new Date();
+  await event.save();
+
+  emitToTeam(teamId, "event:status-update", {
+    eventId,
+    status: event.status,
+    endedAt: event.endedAt,
+  });
+
+  res.json({ success: true, data: { status: event.status, endedAt: event.endedAt } });
 });

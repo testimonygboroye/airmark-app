@@ -7,6 +7,7 @@ import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { CountdownControls } from "@/components/live/CountdownControls";
 import { SignalInbox } from "@/components/live/SignalInbox";
 import { TalkbackControls } from "@/components/live/TalkbackControls";
+import { MarkButton } from "@/components/live/MarkButton";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -47,10 +48,23 @@ export function DirectorLiveView({
     },
   });
 
+  const startMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId });
+    },
+  });
+
+  const endMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post(`/events/${eventId}/end`, { teamId: event.teamId });
+    },
+  });
+
   return (
     <div className="min-h-screen flex flex-col relative">
       <CountdownOverlay targetAt={countdownTargetAt} />
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
+      <MarkButton eventId={eventId} teamId={event.teamId} />
 
       <header className="flex items-center justify-between px-4 py-4 border-b border-white/10">
         <div>
@@ -58,6 +72,24 @@ export function DirectorLiveView({
           <h1 className="font-display font-semibold">{event.title}</h1>
         </div>
         <div className="flex items-center gap-2">
+          {event.status !== "live" && event.status !== "ended" && (
+            <button
+              onClick={() => startMutation.mutate()}
+              disabled={startMutation.isPending}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-signal-red"
+            >
+              Start Event
+            </button>
+          )}
+          {event.status === "live" && (
+            <button
+              onClick={() => endMutation.mutate()}
+              disabled={endMutation.isPending}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 text-surface-light/70"
+            >
+              End Event
+            </button>
+          )}
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
           <button

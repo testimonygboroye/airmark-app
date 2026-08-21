@@ -54,6 +54,7 @@ export function EventDetailPage() {
   const canManage = hasPermission("event:manage");
   const canGoLive = hasPermission("tally:control");
   const canManageRos = hasPermission("ros:manage");
+  const canViewHighlights = hasPermission("highlight:view");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -66,16 +67,29 @@ export function EventDetailPage() {
               timeStyle: "short",
             })}
           </p>
+          <span className="inline-block mt-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-standby-slate/10 text-standby-slate">
+            {event.status}
+          </span>
         </div>
-        <div className="flex gap-2">
-          {canManageRos && (
-            <Link to={`/events/${event._id}/run-of-show`}>
-              <Button variant="secondary">Run of show</Button>
-            </Link>
-          )}
-          {canGoLive && (
-            <Link to={`/events/${event._id}/live`}>
-              <Button>Go Live</Button>
+        <div className="flex flex-col gap-2 items-end">
+          <div className="flex gap-2">
+            {canManageRos && (
+              <Link to={`/events/${event._id}/run-of-show`}>
+                <Button variant="secondary">Run of show</Button>
+              </Link>
+            )}
+            {canGoLive && (
+              <Link to={`/events/${event._id}/live`}>
+                <Button>Go Live</Button>
+              </Link>
+            )}
+          </div>
+          {canViewHighlights && (
+            <Link
+              to={`/events/${event._id}/highlights`}
+              className="text-xs text-accent-teal font-medium"
+            >
+              View highlights
             </Link>
           )}
         </div>
