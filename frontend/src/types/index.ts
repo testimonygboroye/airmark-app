@@ -133,3 +133,19 @@ export function formatOffset(seconds: number): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
+
+export type EquipmentIssueType = "battery_low" | "storage_full" | "equipment_fault" | "other";
+
+export interface EquipmentIssueRecord {
+  _id: string;
+  eventId: string;
+  teamId: string;
+  cameraId?: string;
+  reportedBy: { _id: string; firstName: string; lastName: string };
+  issueType: EquipmentIssueType;
+  note?: string;
+  status: "open" | "resolved";
+  resolvedBy?: { _id: string; firstName: string; lastName: string };
+  resolvedAt?: string;
+  createdAt: string;
+}

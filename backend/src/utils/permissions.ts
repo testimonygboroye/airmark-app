@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   TALKBACK_SEND: "talkback:send",
   HIGHLIGHT_CREATE: "highlight:create",
   HIGHLIGHT_VIEW: "highlight:view",
+  EQUIPMENT_REPORT: "equipment:report",
+  EQUIPMENT_MANAGE: "equipment:manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -57,6 +59,8 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.TALKBACK_SEND,
       PERMISSIONS.HIGHLIGHT_CREATE,
       PERMISSIONS.HIGHLIGHT_VIEW,
+      PERMISSIONS.EQUIPMENT_REPORT,
+      PERMISSIONS.EQUIPMENT_MANAGE,
     ],
   },
   {
@@ -69,6 +73,7 @@ export const DEFAULT_TEAM_ROLES: Array<{
       PERMISSIONS.TALLY_VIEW,
       PERMISSIONS.SIGNAL_SEND,
       PERMISSIONS.HIGHLIGHT_CREATE,
+      PERMISSIONS.EQUIPMENT_REPORT,
     ],
   },
   {

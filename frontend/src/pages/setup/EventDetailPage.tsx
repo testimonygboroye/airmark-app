@@ -55,6 +55,7 @@ export function EventDetailPage() {
   const canGoLive = hasPermission("tally:control");
   const canManageRos = hasPermission("ros:manage");
   const canViewHighlights = hasPermission("highlight:view");
+  const canViewEquipment = hasPermission("equipment:manage");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -91,6 +92,14 @@ export function EventDetailPage() {
             >
               View highlights
             </Link>
+          {canViewEquipment && (
+            <Link
+              to={`/events/${event._id}/equipment`}
+              className="text-xs text-accent-teal font-medium"
+            >
+              Equipment status
+            </Link>
+          )}
           )}
         </div>
       </div>

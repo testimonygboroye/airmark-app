@@ -5,6 +5,7 @@ import countdownRoutes from "./countdown.routes";
 import signalRoutes from "./signal.routes";
 import talkbackRoutes from "./talkback.routes";
 import highlightRoutes from "./highlight.routes";
+import equipmentRoutes from "./equipment.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
@@ -63,5 +64,6 @@ router.use("/:eventId/countdown", countdownRoutes);
 router.use("/:eventId/signals", signalRoutes);
 router.use("/:eventId/talkback", talkbackRoutes);
 router.use("/:eventId/highlights", highlightRoutes);
+router.use("/:eventId/equipment", equipmentRoutes);
 
 export default router;
