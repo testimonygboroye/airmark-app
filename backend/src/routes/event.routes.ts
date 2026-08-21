@@ -6,6 +6,7 @@ import signalRoutes from "./signal.routes";
 import talkbackRoutes from "./talkback.routes";
 import highlightRoutes from "./highlight.routes";
 import equipmentRoutes from "./equipment.routes";
+import obsRoutes from "./obs.routes";
 import { eventChecklistRouter } from "./checklist.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
