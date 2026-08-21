@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import type { TeamMemberEntry } from "@/types";
 
 export function ChecklistTemplateEditorPage() {
   const { teamId } = useParams<{ teamId: string }>();
