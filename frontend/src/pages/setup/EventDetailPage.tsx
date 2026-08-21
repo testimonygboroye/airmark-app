@@ -85,22 +85,24 @@ export function EventDetailPage() {
               </Link>
             )}
           </div>
-          {canViewHighlights && (
-            <Link
-              to={`/events/${event._id}/highlights`}
-              className="text-xs text-accent-teal font-medium"
-            >
-              View highlights
-            </Link>
-          {canViewEquipment && (
-            <Link
-              to={`/events/${event._id}/equipment`}
-              className="text-xs text-accent-teal font-medium"
-            >
-              Equipment status
-            </Link>
-          )}
-          )}
+          <div className="flex gap-3">
+            {canViewHighlights && (
+              <Link
+                to={`/events/${event._id}/highlights`}
+                className="text-xs text-accent-teal font-medium"
+              >
+                View highlights
+              </Link>
+            )}
+            {canViewEquipment && (
+              <Link
+                to={`/events/${event._id}/equipment`}
+                className="text-xs text-accent-teal font-medium"
+              >
+                Equipment status
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
