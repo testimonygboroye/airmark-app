@@ -183,4 +183,14 @@ export interface ObsConnectionRecord {
   obsVersion?: string;
   currentProgramScene?: string;
   scenes: ObsSceneRecord[];
+  transitions?: string[];
+  currentTransition?: string;
+  transitionDurationMs?: number;
+  sceneItems?: ObsSceneItemRecord[];
+}
+
+export interface ObsSceneItemRecord {
+  sceneItemId: number;
+  sourceName: string;
+  sceneItemEnabled: boolean;
 }

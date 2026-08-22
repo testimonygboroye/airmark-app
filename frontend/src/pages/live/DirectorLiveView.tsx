@@ -10,6 +10,8 @@ import { TalkbackControls } from "@/components/live/TalkbackControls";
 import { MarkButton } from "@/components/live/MarkButton";
 import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
 import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
+import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
+import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -65,6 +67,8 @@ export function DirectorLiveView({
     },
   });
 
+  const obsConnected = obsConnection.status === "connected";
+
   return (
     <div className="min-h-screen flex flex-col relative">
       <CountdownOverlay targetAt={countdownTargetAt} />
@@ -95,11 +99,7 @@ export function DirectorLiveView({
               End Event
             </button>
           )}
-          <ObsPairingPanel
-            eventId={eventId}
-            teamId={event.teamId}
-            connected={obsConnection.status === "connected"}
-          />
+          <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
           <button
@@ -145,13 +145,27 @@ export function DirectorLiveView({
         </div>
       </div>
 
-      {obsConnection.status === "connected" && (
-        <ObsSceneSwitcher
-          eventId={eventId}
-          teamId={event.teamId}
-          scenes={obsConnection.scenes}
-          currentProgramScene={obsConnection.currentProgramScene}
-        />
+      {obsConnected && (
+        <>
+          <ObsSceneSwitcher
+            eventId={eventId}
+            teamId={event.teamId}
+            scenes={obsConnection.scenes}
+            currentProgramScene={obsConnection.currentProgramScene}
+          />
+          <ObsTransitionControls
+            eventId={eventId}
+            teamId={event.teamId}
+            transitions={obsConnection.transitions ?? []}
+            currentTransition={obsConnection.currentTransition}
+            transitionDurationMs={obsConnection.transitionDurationMs}
+          />
+          <ObsSceneItemsPanel
+            eventId={eventId}
+            teamId={event.teamId}
+            items={obsConnection.sceneItems ?? []}
+          />
+        </>
       )}
 
       <RunOfShowControls

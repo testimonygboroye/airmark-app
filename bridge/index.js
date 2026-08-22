@@ -22,6 +22,19 @@ const bridgeSocket = io(`${BACKEND_URL}/obs-bridge`, {
   reconnectionAttempts: Infinity,
 });
 
+async function fetchSceneItems(sceneName) {
+  try {
+    const { sceneItems } = await obs.call("GetSceneItemList", { sceneName });
+    return sceneItems.map((item) => ({
+      sceneItemId: item.sceneItemId,
+      sourceName: item.sourceName,
+      sceneItemEnabled: item.sceneItemEnabled,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function connectToObs() {
   try {
     const { obsWebSocketVersion } = await obs.connect(OBS_ADDRESS, OBS_PASSWORD);
@@ -32,14 +45,39 @@ async function connectToObs() {
       .map((s) => ({ sceneName: s.sceneName, sceneIndex: s.sceneIndex }))
       .reverse();
 
+    const { transitions, currentSceneTransitionName } = await obs.call("GetSceneTransitionList");
+    let transitionDurationMs = 300;
+    try {
+      const t = await obs.call("GetCurrentSceneTransition");
+      transitionDurationMs = t.transitionDuration ?? 300;
+    } catch {
+      /* some transitions (e.g. Cut) have no duration */
+    }
+
+    const sceneItems = await fetchSceneItems(currentProgramSceneName);
+
     bridgeSocket.emit("obs:hello", {
       obsVersion: obsWebSocketVersion,
       scenes: sceneList,
       currentProgramScene: currentProgramSceneName,
+      transitions: transitions.map((t) => t.transitionName),
+      currentTransition: currentSceneTransitionName,
+      transitionDurationMs,
+      sceneItems,
     });
 
-    obs.on("CurrentProgramSceneChanged", ({ sceneName }) => {
+    obs.on("CurrentProgramSceneChanged", async ({ sceneName }) => {
       bridgeSocket.emit("obs:scene-changed", { currentProgramScene: sceneName });
+      const items = await fetchSceneItems(sceneName);
+      bridgeSocket.emit("obs:scene-items-update", { sceneName, items });
+    });
+
+    obs.on("CurrentSceneTransitionChanged", ({ transitionName }) => {
+      bridgeSocket.emit("obs:transition-changed", { transitionName });
+    });
+
+    obs.on("SceneItemEnableStateChanged", ({ sceneItemId, sceneItemEnabled }) => {
+      bridgeSocket.emit("obs:scene-item-toggled", { sceneItemId, sceneItemEnabled });
     });
 
     obs.on("ConnectionClosed", () => {

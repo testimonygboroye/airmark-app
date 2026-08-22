@@ -31,26 +31,65 @@ export const getObsStatus = asyncHandler(async (req: Request, res: Response) => 
 
   res.json({
     success: true,
-    data: connection ?? { status: "disconnected", scenes: [] },
+    data: connection ?? { status: "disconnected", scenes: [], transitions: [], sceneItems: [] },
   });
 });
+
+async function requireConnectedBridge(eventId: string) {
+  const connection = await ObsConnection.findOne({ eventId });
+  if (!connection || connection.status !== "connected") {
+    throw ApiError.badRequest("OBS is not connected for this event");
+  }
+  return connection;
+}
 
 export const setScene = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { sceneName } = req.body;
 
-  const connection = await ObsConnection.findOne({ eventId });
-  if (!connection || connection.status !== "connected") {
-    throw ApiError.badRequest("OBS is not connected for this event");
-  }
+  await requireConnectedBridge(eventId);
 
   const result = await sendObsCommand(getSocketServer(), eventId, "SetCurrentProgramScene", {
     sceneName,
   });
 
-  if (!result.success) {
-    throw ApiError.badRequest(result.error || "Failed to switch scene");
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to switch scene");
+  res.json({ success: true, data: { sceneName } });
+});
+
+export const setTransition = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { transitionName, transitionDurationMs } = req.body;
+
+  await requireConnectedBridge(eventId);
+
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetCurrentSceneTransition", {
+    transitionName,
+  });
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to set transition");
+
+  if (typeof transitionDurationMs === "number") {
+    await sendObsCommand(getSocketServer(), eventId, "SetCurrentSceneTransitionDuration", {
+      transitionDuration: transitionDurationMs,
+    });
   }
 
-  res.json({ success: true, data: { sceneName } });
+  res.json({ success: true, data: { transitionName, transitionDurationMs } });
+});
+
+export const toggleSceneItem = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const sceneItemId = parseInt(req.params.sceneItemId as string, 10);
+  const { enabled } = req.body;
+
+  const connection = await requireConnectedBridge(eventId);
+
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetSceneItemEnabled", {
+    sceneName: connection.currentProgramScene,
+    sceneItemId,
+    sceneItemEnabled: enabled,
+  });
+
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to toggle source");
+  res.json({ success: true, data: { sceneItemId, enabled } });
 });

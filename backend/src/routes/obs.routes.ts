@@ -3,7 +3,12 @@ import * as obsController from "../controllers/obs.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
-import { pairSchema, setSceneSchema } from "../validators/obs.validator";
+import {
+  pairSchema,
+  setSceneSchema,
+  setTransitionSchema,
+  toggleSceneItemSchema,
+} from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router({ mergeParams: true });
@@ -24,6 +29,20 @@ router.post(
   validate(setSceneSchema),
   requirePermission(PERMISSIONS.OBS_CONTROL),
   obsController.setScene
+);
+
+router.post(
+  "/transition",
+  validate(setTransitionSchema),
+  requirePermission(PERMISSIONS.OBS_CONTROL),
+  obsController.setTransition
+);
+
+router.patch(
+  "/scene-items/:sceneItemId/toggle",
+  validate(toggleSceneItemSchema),
+  requirePermission(PERMISSIONS.OBS_CONTROL),
+  obsController.toggleSceneItem
 );
 
 export default router;

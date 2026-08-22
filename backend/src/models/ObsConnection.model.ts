@@ -7,6 +7,12 @@ export interface IObsScene {
   sceneIndex: number;
 }
 
+export interface IObsSceneItem {
+  sceneItemId: number;
+  sourceName: string;
+  sceneItemEnabled: boolean;
+}
+
 export interface IObsConnection extends Document {
   _id: Types.ObjectId;
   eventId: Types.ObjectId;
@@ -15,6 +21,10 @@ export interface IObsConnection extends Document {
   obsVersion?: string;
   currentProgramScene?: string;
   scenes: IObsScene[];
+  transitions: string[];
+  currentTransition?: string;
+  transitionDurationMs?: number;
+  sceneItems: IObsSceneItem[];
   connectedAt?: Date;
   lastSeenAt?: Date;
   createdAt: Date;
@@ -26,6 +36,15 @@ const obsSceneSchema = new Schema<IObsScene>(
   { _id: false }
 );
 
+const obsSceneItemSchema = new Schema<IObsSceneItem>(
+  {
+    sceneItemId: { type: Number, required: true },
+    sourceName: { type: String, required: true },
+    sceneItemEnabled: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
 const obsConnectionSchema = new Schema<IObsConnection>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true, unique: true, index: true },
@@ -34,6 +53,10 @@ const obsConnectionSchema = new Schema<IObsConnection>(
     obsVersion: { type: String },
     currentProgramScene: { type: String },
     scenes: { type: [obsSceneSchema], default: [] },
+    transitions: { type: [String], default: [] },
+    currentTransition: { type: String },
+    transitionDurationMs: { type: Number },
+    sceneItems: { type: [obsSceneItemSchema], default: [] },
     connectedAt: { type: Date },
     lastSeenAt: { type: Date },
   },

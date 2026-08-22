@@ -30,6 +30,8 @@ export function EventLivePage() {
   const [obsConnection, setObsConnection] = useState<ObsConnectionRecord>({
     status: "disconnected",
     scenes: [],
+    transitions: [],
+    sceneItems: [],
   });
   const [event, setEvent] = useState<EventRecord | null>(null);
 
@@ -126,22 +128,60 @@ export function EventLivePage() {
         setObsConnection((prev) => ({ ...prev, status: payload.status }));
       }
     }
-    function handleObsScenesUpdate(payload: {
+    function handleObsFullUpdate(payload: {
       eventId: string;
       scenes: { sceneName: string; sceneIndex: number }[];
       currentProgramScene: string;
+      transitions: string[];
+      currentTransition: string;
+      transitionDurationMs: number;
+      sceneItems: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
     }) {
       if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({
-          ...prev,
+        setObsConnection({
+          status: "connected",
           scenes: payload.scenes,
           currentProgramScene: payload.currentProgramScene,
-        }));
+          transitions: payload.transitions,
+          currentTransition: payload.currentTransition,
+          transitionDurationMs: payload.transitionDurationMs,
+          sceneItems: payload.sceneItems,
+        });
       }
     }
     function handleObsSceneChanged(payload: { eventId: string; currentProgramScene: string }) {
       if (payload.eventId === eventId) {
         setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
+      }
+    }
+    function handleObsSceneItemsUpdate(payload: {
+      eventId: string;
+      sceneName: string;
+      items: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
+    }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, sceneItems: payload.items }));
+      }
+    }
+    function handleObsSceneItemToggled(payload: {
+      eventId: string;
+      sceneItemId: number;
+      sceneItemEnabled: boolean;
+    }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({
+          ...prev,
+          sceneItems: (prev.sceneItems ?? []).map((item) =>
+            item.sceneItemId === payload.sceneItemId
+              ? { ...item, sceneItemEnabled: payload.sceneItemEnabled }
+              : item
+          ),
+        }));
+      }
+    }
+    function handleObsTransitionChanged(payload: { eventId: string; transitionName: string }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
       }
     }
 
@@ -154,8 +194,11 @@ export function EventLivePage() {
     socket.on("signal:ack", handleSignalAck);
     socket.on("talkback:new", handleTalkbackNew);
     socket.on("obs:status", handleObsStatus);
-    socket.on("obs:scenes-update", handleObsScenesUpdate);
+    socket.on("obs:full-update", handleObsFullUpdate);
     socket.on("obs:scene-changed", handleObsSceneChanged);
+    socket.on("obs:scene-items-update", handleObsSceneItemsUpdate);
+    socket.on("obs:scene-item-toggled", handleObsSceneItemToggled);
+    socket.on("obs:transition-changed", handleObsTransitionChanged);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -167,8 +210,11 @@ export function EventLivePage() {
       socket.off("signal:ack", handleSignalAck);
       socket.off("talkback:new", handleTalkbackNew);
       socket.off("obs:status", handleObsStatus);
-      socket.off("obs:scenes-update", handleObsScenesUpdate);
+      socket.off("obs:full-update", handleObsFullUpdate);
       socket.off("obs:scene-changed", handleObsSceneChanged);
+      socket.off("obs:scene-items-update", handleObsSceneItemsUpdate);
+      socket.off("obs:scene-item-toggled", handleObsSceneItemToggled);
+      socket.off("obs:transition-changed", handleObsTransitionChanged);
     };
   }, [eventId, user?.id]);
 

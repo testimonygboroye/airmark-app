@@ -10,12 +10,6 @@ interface PendingRequest {
 
 const pendingRequests = new Map<string, PendingRequest>();
 
-/**
- * A dedicated namespace, separate from the main user-facing socket
- * connection: bridge scripts authenticate with a short-lived pairing
- * token, not a user JWT, since they represent a laptop process, not a
- * logged-in person.
- */
 export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
   const bridgeNs = io.of("/obs-bridge");
 
@@ -45,22 +39,33 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
     emitToTeam(teamId, "obs:status", { eventId, status: "connected" });
     console.log(`[obs-bridge] connected: event=${eventId}`);
 
-    socket.on("obs:hello", async (payload: { obsVersion: string; scenes: { sceneName: string; sceneIndex: number }[]; currentProgramScene: string }) => {
-      await ObsConnection.findOneAndUpdate(
-        { eventId },
-        {
-          obsVersion: payload.obsVersion,
-          scenes: payload.scenes,
-          currentProgramScene: payload.currentProgramScene,
-          lastSeenAt: new Date(),
-        }
-      );
-      emitToTeam(teamId, "obs:scenes-update", {
-        eventId,
-        scenes: payload.scenes,
-        currentProgramScene: payload.currentProgramScene,
-      });
-    });
+    socket.on(
+      "obs:hello",
+      async (payload: {
+        obsVersion: string;
+        scenes: { sceneName: string; sceneIndex: number }[];
+        currentProgramScene: string;
+        transitions: string[];
+        currentTransition: string;
+        transitionDurationMs: number;
+        sceneItems: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
+      }) => {
+        await ObsConnection.findOneAndUpdate(
+          { eventId },
+          {
+            obsVersion: payload.obsVersion,
+            scenes: payload.scenes,
+            currentProgramScene: payload.currentProgramScene,
+            transitions: payload.transitions,
+            currentTransition: payload.currentTransition,
+            transitionDurationMs: payload.transitionDurationMs,
+            sceneItems: payload.sceneItems,
+            lastSeenAt: new Date(),
+          }
+        );
+        emitToTeam(teamId, "obs:full-update", { eventId, ...payload });
+      }
+    );
 
     socket.on(
       "obs:command:result",
@@ -78,6 +83,33 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
       emitToTeam(teamId, "obs:scene-changed", { eventId, currentProgramScene: payload.currentProgramScene });
     });
 
+    socket.on(
+      "obs:scene-items-update",
+      async (payload: { sceneName: string; items: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[] }) => {
+        await ObsConnection.findOneAndUpdate({ eventId }, { sceneItems: payload.items });
+        emitToTeam(teamId, "obs:scene-items-update", { eventId, ...payload });
+      }
+    );
+
+    socket.on("obs:scene-item-toggled", async (payload: { sceneItemId: number; sceneItemEnabled: boolean }) => {
+      const connection = await ObsConnection.findOne({ eventId });
+      if (connection) {
+        const items = connection.sceneItems.map((item) =>
+          item.sceneItemId === payload.sceneItemId
+            ? { ...item.toObject(), sceneItemEnabled: payload.sceneItemEnabled }
+            : item
+        );
+        connection.sceneItems = items as never;
+        await connection.save();
+      }
+      emitToTeam(teamId, "obs:scene-item-toggled", { eventId, ...payload });
+    });
+
+    socket.on("obs:transition-changed", async (payload: { transitionName: string }) => {
+      await ObsConnection.findOneAndUpdate({ eventId }, { currentTransition: payload.transitionName });
+      emitToTeam(teamId, "obs:transition-changed", { eventId, ...payload });
+    });
+
     socket.on("disconnect", async () => {
       await ObsConnection.findOneAndUpdate({ eventId }, { status: "disconnected" });
       emitToTeam(teamId, "obs:status", { eventId, status: "disconnected" });
@@ -88,11 +120,6 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
   return bridgeNs;
 }
 
-/**
- * Sends a command down to the bridge and awaits its result, with a
- * timeout — turns the fire-and-forget socket relay into something a
- * normal REST controller can await and respond to synchronously.
- */
 export function sendObsCommand(
   io: SocketServer,
   eventId: string,
