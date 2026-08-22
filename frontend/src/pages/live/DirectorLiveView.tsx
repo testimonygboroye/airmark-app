@@ -12,6 +12,7 @@ import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
 import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
 import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
+import { ObsTextOverlayPanel } from "@/components/live/ObsTextOverlayPanel";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -100,6 +101,9 @@ export function DirectorLiveView({
             </button>
           )}
           <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
+          {obsConnected && (
+            <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
+          )}
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
           <button

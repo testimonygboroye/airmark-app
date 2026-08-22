@@ -40,3 +40,14 @@ export const toggleSceneItemSchema = z.object({
     sceneItemId: z.string().min(1),
   }),
 });
+
+export const setTextSourceSchema = z.object({
+  body: z.object({
+    teamId: z.string().min(1),
+    sourceName: z.string().trim().min(1).max(200),
+    text: z.string().trim().max(500),
+  }),
+  params: z.object({
+    eventId: z.string().min(1),
+  }),
+});

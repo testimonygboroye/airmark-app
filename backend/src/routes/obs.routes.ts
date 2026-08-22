@@ -8,6 +8,7 @@ import {
   setSceneSchema,
   setTransitionSchema,
   toggleSceneItemSchema,
+  setTextSourceSchema,
 } from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -43,6 +44,13 @@ router.patch(
   validate(toggleSceneItemSchema),
   requirePermission(PERMISSIONS.OBS_CONTROL),
   obsController.toggleSceneItem
+);
+
+router.post(
+  "/text",
+  validate(setTextSourceSchema),
+  requirePermission(PERMISSIONS.OBS_CONTROL),
+  obsController.setTextSource
 );
 
 export default router;

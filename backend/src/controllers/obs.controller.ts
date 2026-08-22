@@ -93,3 +93,24 @@ export const toggleSceneItem = asyncHandler(async (req: Request, res: Response) 
   if (!result.success) throw ApiError.badRequest(result.error || "Failed to toggle source");
   res.json({ success: true, data: { sceneItemId, enabled } });
 });
+
+/**
+ * Updates the live text content of a GDI+/FreeType2 text source in OBS —
+ * covers lower-thirds (name/title captions) and the flexible text/quote/
+ * verse overlay module in one primitive, since both are just OBS text
+ * sources with different naming conventions set up by the team.
+ */
+export const setTextSource = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { sourceName, text } = req.body;
+
+  await requireConnectedBridge(eventId);
+
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetInputSettings", {
+    inputName: sourceName,
+    inputSettings: { text },
+  });
+
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to update text overlay");
+  res.json({ success: true, data: { sourceName, text } });
+});

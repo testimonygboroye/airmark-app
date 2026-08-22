@@ -96,7 +96,7 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
       if (connection) {
         const items = connection.sceneItems.map((item) =>
           item.sceneItemId === payload.sceneItemId
-            ? { ...item.toObject(), sceneItemEnabled: payload.sceneItemEnabled }
+            ? { ...item, sceneItemEnabled: payload.sceneItemEnabled }
             : item
         );
         connection.sceneItems = items as never;
