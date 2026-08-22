@@ -94,12 +94,11 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
     socket.on("obs:scene-item-toggled", async (payload: { sceneItemId: number; sceneItemEnabled: boolean }) => {
       const connection = await ObsConnection.findOne({ eventId });
       if (connection) {
-        const items = connection.sceneItems.map((item) =>
+        connection.sceneItems = connection.sceneItems.map((item) =>
           item.sceneItemId === payload.sceneItemId
             ? { ...item, sceneItemEnabled: payload.sceneItemEnabled }
             : item
         );
-        connection.sceneItems = items as never;
         await connection.save();
       }
       emitToTeam(teamId, "obs:scene-item-toggled", { eventId, ...payload });
@@ -109,6 +108,20 @@ export function initializeObsBridgeNamespace(io: SocketServer): Namespace {
       await ObsConnection.findOneAndUpdate({ eventId }, { currentTransition: payload.transitionName });
       emitToTeam(teamId, "obs:transition-changed", { eventId, ...payload });
     });
+
+    socket.on(
+      "obs:health-update",
+      async (payload: {
+        streaming: { active: boolean; outputSkippedFrames: number; outputTotalFrames: number };
+        recording: { active: boolean };
+      }) => {
+        await ObsConnection.findOneAndUpdate(
+          { eventId },
+          { streamStatus: payload.streaming, recordStatus: payload.recording, lastSeenAt: new Date() }
+        );
+        emitToTeam(teamId, "obs:health-update", { eventId, ...payload });
+      }
+    );
 
     socket.on("disconnect", async () => {
       await ObsConnection.findOneAndUpdate({ eventId }, { status: "disconnected" });

@@ -187,10 +187,23 @@ export interface ObsConnectionRecord {
   currentTransition?: string;
   transitionDurationMs?: number;
   sceneItems?: ObsSceneItemRecord[];
+  fallbackSceneName?: string;
+  streamStatus?: ObsStreamStatus;
+  recordStatus?: ObsRecordStatus;
 }
 
 export interface ObsSceneItemRecord {
   sceneItemId: number;
   sourceName: string;
   sceneItemEnabled: boolean;
+}
+
+export interface ObsStreamStatus {
+  active: boolean;
+  outputSkippedFrames: number;
+  outputTotalFrames: number;
+}
+
+export interface ObsRecordStatus {
+  active: boolean;
 }

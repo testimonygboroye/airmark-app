@@ -9,48 +9,27 @@ import {
   setTransitionSchema,
   toggleSceneItemSchema,
   setTextSourceSchema,
+  setFallbackSceneSchema,
+  teamOnlySchema,
 } from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router({ mergeParams: true });
 
 router.use(requireAuth);
+router.use(requirePermission(PERMISSIONS.OBS_CONTROL));
 
-router.post(
-  "/pair",
-  validate(pairSchema),
-  requirePermission(PERMISSIONS.OBS_CONTROL),
-  obsController.generatePairingToken
-);
-
-router.get("/status", requirePermission(PERMISSIONS.OBS_CONTROL), obsController.getObsStatus);
-
-router.post(
-  "/scene",
-  validate(setSceneSchema),
-  requirePermission(PERMISSIONS.OBS_CONTROL),
-  obsController.setScene
-);
-
-router.post(
-  "/transition",
-  validate(setTransitionSchema),
-  requirePermission(PERMISSIONS.OBS_CONTROL),
-  obsController.setTransition
-);
-
-router.patch(
-  "/scene-items/:sceneItemId/toggle",
-  validate(toggleSceneItemSchema),
-  requirePermission(PERMISSIONS.OBS_CONTROL),
-  obsController.toggleSceneItem
-);
-
-router.post(
-  "/text",
-  validate(setTextSourceSchema),
-  requirePermission(PERMISSIONS.OBS_CONTROL),
-  obsController.setTextSource
-);
+router.post("/pair", validate(pairSchema), obsController.generatePairingToken);
+router.get("/status", obsController.getObsStatus);
+router.post("/scene", validate(setSceneSchema), obsController.setScene);
+router.post("/transition", validate(setTransitionSchema), obsController.setTransition);
+router.patch("/scene-items/:sceneItemId/toggle", validate(toggleSceneItemSchema), obsController.toggleSceneItem);
+router.post("/text", validate(setTextSourceSchema), obsController.setTextSource);
+router.post("/fallback-scene", validate(setFallbackSceneSchema), obsController.setFallbackScene);
+router.post("/fallback-scene/trigger", validate(teamOnlySchema), obsController.triggerFallback);
+router.post("/stream/start", validate(teamOnlySchema), obsController.startStream);
+router.post("/stream/stop", validate(teamOnlySchema), obsController.stopStream);
+router.post("/record/start", validate(teamOnlySchema), obsController.startRecord);
+router.post("/record/stop", validate(teamOnlySchema), obsController.stopRecord);
 
 export default router;

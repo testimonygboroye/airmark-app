@@ -138,7 +138,8 @@ export function EventLivePage() {
       sceneItems: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
     }) {
       if (payload.eventId === eventId) {
-        setObsConnection({
+        setObsConnection((prev) => ({
+          ...prev,
           status: "connected",
           scenes: payload.scenes,
           currentProgramScene: payload.currentProgramScene,
@@ -146,7 +147,7 @@ export function EventLivePage() {
           currentTransition: payload.currentTransition,
           transitionDurationMs: payload.transitionDurationMs,
           sceneItems: payload.sceneItems,
-        });
+        }));
       }
     }
     function handleObsSceneChanged(payload: { eventId: string; currentProgramScene: string }) {
@@ -184,6 +185,19 @@ export function EventLivePage() {
         setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
       }
     }
+    function handleObsHealthUpdate(payload: {
+      eventId: string;
+      streaming: { active: boolean; outputSkippedFrames: number; outputTotalFrames: number };
+      recording: { active: boolean };
+    }) {
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({
+          ...prev,
+          streamStatus: payload.streaming,
+          recordStatus: payload.recording,
+        }));
+      }
+    }
 
     socket.on("tally:update", handleTallyUpdate);
     socket.on("cameras:update", handleCamerasUpdate);
@@ -199,6 +213,7 @@ export function EventLivePage() {
     socket.on("obs:scene-items-update", handleObsSceneItemsUpdate);
     socket.on("obs:scene-item-toggled", handleObsSceneItemToggled);
     socket.on("obs:transition-changed", handleObsTransitionChanged);
+    socket.on("obs:health-update", handleObsHealthUpdate);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -215,6 +230,7 @@ export function EventLivePage() {
       socket.off("obs:scene-items-update", handleObsSceneItemsUpdate);
       socket.off("obs:scene-item-toggled", handleObsSceneItemToggled);
       socket.off("obs:transition-changed", handleObsTransitionChanged);
+      socket.off("obs:health-update", handleObsHealthUpdate);
     };
   }, [eventId, user?.id]);
 

@@ -22,6 +22,8 @@ const bridgeSocket = io(`${BACKEND_URL}/obs-bridge`, {
   reconnectionAttempts: Infinity,
 });
 
+let healthInterval = null;
+
 async function fetchSceneItems(sceneName) {
   try {
     const { sceneItems } = await obs.call("GetSceneItemList", { sceneName });
@@ -32,6 +34,23 @@ async function fetchSceneItems(sceneName) {
     }));
   } catch {
     return [];
+  }
+}
+
+async function pollHealth() {
+  try {
+    const streamStatus = await obs.call("GetStreamStatus");
+    const recordStatus = await obs.call("GetRecordStatus");
+    bridgeSocket.emit("obs:health-update", {
+      streaming: {
+        active: streamStatus.outputActive,
+        outputSkippedFrames: streamStatus.outputSkippedFrames,
+        outputTotalFrames: streamStatus.outputTotalFrames,
+      },
+      recording: { active: recordStatus.outputActive },
+    });
+  } catch {
+    /* OBS may be briefly unreachable — next poll will retry */
   }
 }
 
@@ -66,6 +85,10 @@ async function connectToObs() {
       sceneItems,
     });
 
+    if (healthInterval) clearInterval(healthInterval);
+    healthInterval = setInterval(pollHealth, 5000);
+    pollHealth();
+
     obs.on("CurrentProgramSceneChanged", async ({ sceneName }) => {
       bridgeSocket.emit("obs:scene-changed", { currentProgramScene: sceneName });
       const items = await fetchSceneItems(sceneName);
@@ -80,8 +103,12 @@ async function connectToObs() {
       bridgeSocket.emit("obs:scene-item-toggled", { sceneItemId, sceneItemEnabled });
     });
 
+    obs.on("StreamStateChanged", () => pollHealth());
+    obs.on("RecordStateChanged", () => pollHealth());
+
     obs.on("ConnectionClosed", () => {
       console.log("✗ Lost connection to OBS Studio. Retrying in 5s...");
+      if (healthInterval) clearInterval(healthInterval);
       setTimeout(connectToObs, 5000);
     });
   } catch (err) {

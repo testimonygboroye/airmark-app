@@ -13,6 +13,8 @@ import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
 import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
 import { ObsTextOverlayPanel } from "@/components/live/ObsTextOverlayPanel";
+import { ObsHealthMonitor } from "@/components/live/ObsHealthMonitor";
+import { ObsFailsafeControls } from "@/components/live/ObsFailsafeControls";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -75,6 +77,16 @@ export function DirectorLiveView({
       <CountdownOverlay targetAt={countdownTargetAt} />
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
+      {obsConnected && (
+        <ObsFailsafeControls
+          eventId={eventId}
+          teamId={event.teamId}
+          scenes={obsConnection.scenes}
+          fallbackSceneName={obsConnection.fallbackSceneName}
+          streamStatus={obsConnection.streamStatus}
+          recordStatus={obsConnection.recordStatus}
+        />
+      )}
 
       <header className="flex items-center justify-between px-4 py-4 border-b border-white/10 flex-wrap gap-2">
         <div>
@@ -114,6 +126,10 @@ export function DirectorLiveView({
           </button>
         </div>
       </header>
+
+      {obsConnected && (
+        <ObsHealthMonitor streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />
+      )}
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 

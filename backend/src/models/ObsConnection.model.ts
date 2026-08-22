@@ -13,6 +13,16 @@ export interface IObsSceneItem {
   sceneItemEnabled: boolean;
 }
 
+export interface IObsStreamStatus {
+  active: boolean;
+  outputSkippedFrames: number;
+  outputTotalFrames: number;
+}
+
+export interface IObsRecordStatus {
+  active: boolean;
+}
+
 export interface IObsConnection extends Document {
   _id: Types.ObjectId;
   eventId: Types.ObjectId;
@@ -25,6 +35,9 @@ export interface IObsConnection extends Document {
   currentTransition?: string;
   transitionDurationMs?: number;
   sceneItems: IObsSceneItem[];
+  fallbackSceneName?: string;
+  streamStatus?: IObsStreamStatus;
+  recordStatus?: IObsRecordStatus;
   connectedAt?: Date;
   lastSeenAt?: Date;
   createdAt: Date;
@@ -45,6 +58,20 @@ const obsSceneItemSchema = new Schema<IObsSceneItem>(
   { _id: false }
 );
 
+const obsStreamStatusSchema = new Schema<IObsStreamStatus>(
+  {
+    active: { type: Boolean, default: false },
+    outputSkippedFrames: { type: Number, default: 0 },
+    outputTotalFrames: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
+const obsRecordStatusSchema = new Schema<IObsRecordStatus>(
+  { active: { type: Boolean, default: false } },
+  { _id: false }
+);
+
 const obsConnectionSchema = new Schema<IObsConnection>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true, unique: true, index: true },
@@ -57,6 +84,9 @@ const obsConnectionSchema = new Schema<IObsConnection>(
     currentTransition: { type: String },
     transitionDurationMs: { type: Number },
     sceneItems: { type: [obsSceneItemSchema], default: [] },
+    fallbackSceneName: { type: String },
+    streamStatus: { type: obsStreamStatusSchema },
+    recordStatus: { type: obsRecordStatusSchema },
     connectedAt: { type: Date },
     lastSeenAt: { type: Date },
   },
