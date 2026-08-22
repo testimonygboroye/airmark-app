@@ -23,6 +23,7 @@ const bridgeSocket = io(`${BACKEND_URL}/obs-bridge`, {
 });
 
 let healthInterval = null;
+let countdownInterval = null;
 
 async function fetchSceneItems(sceneName) {
   try {
@@ -51,6 +52,44 @@ async function pollHealth() {
     });
   } catch {
     /* OBS may be briefly unreachable — next poll will retry */
+  }
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function startCountdownOverlay(sourceName, targetAt) {
+  if (countdownInterval) clearInterval(countdownInterval);
+  const target = new Date(targetAt).getTime();
+
+  const tick = async () => {
+    const remaining = target - Date.now();
+    const text = remaining > 0 ? formatCountdown(remaining) : "LIVE";
+    try {
+      await obs.call("SetInputSettings", { inputName: sourceName, inputSettings: { text } });
+    } catch (err) {
+      console.error("✗ Failed to update countdown overlay:", err.message);
+    }
+    if (remaining <= 0) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  };
+
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+  console.log(`✓ Countdown overlay started on source "${sourceName}"`);
+}
+
+function stopCountdownOverlay() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    console.log("✓ Countdown overlay stopped");
   }
 }
 
@@ -109,6 +148,7 @@ async function connectToObs() {
     obs.on("ConnectionClosed", () => {
       console.log("✗ Lost connection to OBS Studio. Retrying in 5s...");
       if (healthInterval) clearInterval(healthInterval);
+      if (countdownInterval) clearInterval(countdownInterval);
       setTimeout(connectToObs, 5000);
     });
   } catch (err) {
@@ -139,6 +179,14 @@ bridgeSocket.on("obs:command", async ({ requestId, requestType, requestData }) =
       error: err.message || "Unknown OBS error",
     });
   }
+});
+
+bridgeSocket.on("obs:countdown-overlay:start", ({ sourceName, targetAt }) => {
+  startCountdownOverlay(sourceName, targetAt);
+});
+
+bridgeSocket.on("obs:countdown-overlay:stop", () => {
+  stopCountdownOverlay();
 });
 
 bridgeSocket.on("disconnect", () => {

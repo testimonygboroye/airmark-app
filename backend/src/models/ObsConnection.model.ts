@@ -36,6 +36,7 @@ export interface IObsConnection extends Document {
   transitionDurationMs?: number;
   sceneItems: IObsSceneItem[];
   fallbackSceneName?: string;
+  watermarkSceneItemId?: number;
   streamStatus?: IObsStreamStatus;
   recordStatus?: IObsRecordStatus;
   connectedAt?: Date;
@@ -85,6 +86,7 @@ const obsConnectionSchema = new Schema<IObsConnection>(
     transitionDurationMs: { type: Number },
     sceneItems: { type: [obsSceneItemSchema], default: [] },
     fallbackSceneName: { type: String },
+    watermarkSceneItemId: { type: Number },
     streamStatus: { type: obsStreamStatusSchema },
     recordStatus: { type: obsRecordStatusSchema },
     connectedAt: { type: Date },

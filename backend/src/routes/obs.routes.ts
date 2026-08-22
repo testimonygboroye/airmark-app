@@ -11,6 +11,8 @@ import {
   setTextSourceSchema,
   setFallbackSceneSchema,
   teamOnlySchema,
+  setWatermarkSchema,
+  startCountdownOverlaySchema,
 } from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -31,5 +33,9 @@ router.post("/stream/start", validate(teamOnlySchema), obsController.startStream
 router.post("/stream/stop", validate(teamOnlySchema), obsController.stopStream);
 router.post("/record/start", validate(teamOnlySchema), obsController.startRecord);
 router.post("/record/stop", validate(teamOnlySchema), obsController.stopRecord);
+router.post("/watermark", validate(setWatermarkSchema), obsController.setWatermarkSource);
+router.patch("/watermark/toggle", validate(toggleSceneItemSchema), obsController.toggleWatermark);
+router.post("/countdown-overlay/start", validate(startCountdownOverlaySchema), obsController.startCountdownOverlay);
+router.post("/countdown-overlay/stop", validate(teamOnlySchema), obsController.stopCountdownOverlay);
 
 export default router;

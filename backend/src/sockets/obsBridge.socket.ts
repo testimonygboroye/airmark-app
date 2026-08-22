@@ -155,3 +155,13 @@ export function sendObsCommand(
       .emit("obs:command", { requestId, requestType, requestData });
   });
 }
+
+/** Fire-and-forget — no response expected, used for the bridge's local countdown overlay renderer. */
+export function sendObsInstruction(
+  io: SocketServer,
+  eventId: string,
+  event: string,
+  payload: Record<string, unknown>
+): void {
+  io.of("/obs-bridge").to(`obs-bridge:${eventId}`).emit(event, payload);
+}

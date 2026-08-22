@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { ObsConnection } from "../models/ObsConnection.model";
+import { Event } from "../models/Event.model";
 import { signBridgePairingToken } from "../utils/obsBridgeToken.util";
-import { sendObsCommand } from "../sockets/obsBridge.socket";
+import { sendObsCommand, sendObsInstruction } from "../sockets/obsBridge.socket";
 import { getSocketServer } from "../sockets";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -92,22 +93,15 @@ export const setTextSource = asyncHandler(async (req: Request, res: Response) =>
 export const setFallbackScene = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { sceneName } = req.body;
-  const connection = await ObsConnection.findOneAndUpdate(
-    { eventId },
-    { fallbackSceneName: sceneName },
-    { new: true }
-  );
+  const connection = await ObsConnection.findOneAndUpdate({ eventId }, { fallbackSceneName: sceneName }, { new: true });
   if (!connection) throw ApiError.notFound("OBS connection not found for this event");
   res.json({ success: true, data: { fallbackSceneName: sceneName } });
 });
 
-/** The panic button — one tap, switches straight to the pre-designated fallback scene. */
 export const triggerFallback = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const connection = await requireConnectedBridge(eventId);
-  if (!connection.fallbackSceneName) {
-    throw ApiError.badRequest("No fallback scene has been set for this event yet");
-  }
+  if (!connection.fallbackSceneName) throw ApiError.badRequest("No fallback scene has been set for this event yet");
   const result = await sendObsCommand(getSocketServer(), eventId, "SetCurrentProgramScene", {
     sceneName: connection.fallbackSceneName,
   });
@@ -144,5 +138,55 @@ export const stopRecord = asyncHandler(async (req: Request, res: Response) => {
   await requireConnectedBridge(eventId);
   const result = await sendObsCommand(getSocketServer(), eventId, "StopRecord");
   if (!result.success) throw ApiError.badRequest(result.error || "Failed to stop recording");
+  res.json({ success: true });
+});
+
+export const setWatermarkSource = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { sceneItemId } = req.body;
+  const connection = await ObsConnection.findOneAndUpdate({ eventId }, { watermarkSceneItemId: sceneItemId }, { new: true });
+  if (!connection) throw ApiError.notFound("OBS connection not found for this event");
+  res.json({ success: true, data: { watermarkSceneItemId: sceneItemId } });
+});
+
+export const toggleWatermark = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { enabled } = req.body;
+  const connection = await requireConnectedBridge(eventId);
+  if (typeof connection.watermarkSceneItemId !== "number") {
+    throw ApiError.badRequest("No watermark source has been set for this event yet");
+  }
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetSceneItemEnabled", {
+    sceneName: connection.currentProgramScene,
+    sceneItemId: connection.watermarkSceneItemId,
+    sceneItemEnabled: enabled,
+  });
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to toggle watermark");
+  res.json({ success: true, data: { enabled } });
+});
+
+export const startCountdownOverlay = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { sourceName } = req.body;
+
+  await requireConnectedBridge(eventId);
+
+  const event = await Event.findById(eventId);
+  if (!event?.countdownTargetAt || event.countdownTargetAt.getTime() < Date.now()) {
+    throw ApiError.badRequest("No active countdown to push to OBS");
+  }
+
+  sendObsInstruction(getSocketServer(), eventId, "obs:countdown-overlay:start", {
+    sourceName,
+    targetAt: event.countdownTargetAt.toISOString(),
+  });
+
+  res.json({ success: true, data: { sourceName, targetAt: event.countdownTargetAt } });
+});
+
+export const stopCountdownOverlay = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  await requireConnectedBridge(eventId);
+  sendObsInstruction(getSocketServer(), eventId, "obs:countdown-overlay:stop", {});
   res.json({ success: true });
 });
