@@ -13,6 +13,8 @@ import {
   teamOnlySchema,
   setWatermarkSchema,
   startCountdownOverlaySchema,
+  audioMuteSchema,
+  audioVolumeSchema,
 } from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -37,5 +39,10 @@ router.post("/watermark", validate(setWatermarkSchema), obsController.setWaterma
 router.patch("/watermark/toggle", validate(toggleSceneItemSchema), obsController.toggleWatermark);
 router.post("/countdown-overlay/start", validate(startCountdownOverlaySchema), obsController.startCountdownOverlay);
 router.post("/countdown-overlay/stop", validate(teamOnlySchema), obsController.stopCountdownOverlay);
+router.patch("/audio/mute", validate(audioMuteSchema), obsController.setAudioMute);
+router.patch("/audio/volume", validate(audioVolumeSchema), obsController.setAudioVolume);
+router.get("/audio/sources", obsController.getAudioSources);
+router.post("/replay-buffer/start", validate(teamOnlySchema), obsController.startReplayBuffer);
+router.post("/replay-buffer/save", validate(teamOnlySchema), obsController.saveReplayBuffer);
 
 export default router;

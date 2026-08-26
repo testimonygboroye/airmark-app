@@ -52,3 +52,17 @@ export const startCountdownOverlaySchema = z.object({
   body: z.object({ teamId: z.string().min(1), sourceName: z.string().trim().min(1).max(200) }),
   params: z.object({ eventId: z.string().min(1) }),
 });
+
+export const audioMuteSchema = z.object({
+  body: z.object({ teamId: z.string().min(1), inputName: z.string().trim().min(1).max(200), muted: z.boolean() }),
+  params: z.object({ eventId: z.string().min(1) }),
+});
+
+export const audioVolumeSchema = z.object({
+  body: z.object({
+    teamId: z.string().min(1),
+    inputName: z.string().trim().min(1).max(200),
+    volumeDb: z.number().min(-100).max(26),
+  }),
+  params: z.object({ eventId: z.string().min(1) }),
+});

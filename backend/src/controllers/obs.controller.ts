@@ -168,19 +168,15 @@ export const toggleWatermark = asyncHandler(async (req: Request, res: Response) 
 export const startCountdownOverlay = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { sourceName } = req.body;
-
   await requireConnectedBridge(eventId);
-
   const event = await Event.findById(eventId);
   if (!event?.countdownTargetAt || event.countdownTargetAt.getTime() < Date.now()) {
     throw ApiError.badRequest("No active countdown to push to OBS");
   }
-
   sendObsInstruction(getSocketServer(), eventId, "obs:countdown-overlay:start", {
     sourceName,
     targetAt: event.countdownTargetAt.toISOString(),
   });
-
   res.json({ success: true, data: { sourceName, targetAt: event.countdownTargetAt } });
 });
 
@@ -188,5 +184,49 @@ export const stopCountdownOverlay = asyncHandler(async (req: Request, res: Respo
   const eventId = req.params.eventId as string;
   await requireConnectedBridge(eventId);
   sendObsInstruction(getSocketServer(), eventId, "obs:countdown-overlay:stop", {});
+  res.json({ success: true });
+});
+
+/** Basic 1E: mute/volume of any input already present in the OBS setup — no interface required. */
+export const setAudioMute = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { inputName, muted } = req.body;
+  await requireConnectedBridge(eventId);
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetInputMute", { inputName, inputMuted: muted });
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to mute/unmute source");
+  res.json({ success: true, data: { inputName, muted } });
+});
+
+export const setAudioVolume = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { inputName, volumeDb } = req.body;
+  await requireConnectedBridge(eventId);
+  const result = await sendObsCommand(getSocketServer(), eventId, "SetInputVolume", { inputName, inputVolumeDb: volumeDb });
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to set volume");
+  res.json({ success: true, data: { inputName, volumeDb } });
+});
+
+export const getAudioSources = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  await requireConnectedBridge(eventId);
+  const result = await sendObsCommand(getSocketServer(), eventId, "GetInputList", { inputKind: undefined });
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to fetch audio sources");
+  res.json({ success: true, data: result.data });
+});
+
+/** 1I — OBS's native replay buffer, unrelated to hardware. */
+export const startReplayBuffer = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  await requireConnectedBridge(eventId);
+  const result = await sendObsCommand(getSocketServer(), eventId, "StartReplayBuffer");
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to start replay buffer");
+  res.json({ success: true });
+});
+
+export const saveReplayBuffer = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  await requireConnectedBridge(eventId);
+  const result = await sendObsCommand(getSocketServer(), eventId, "SaveReplayBuffer");
+  if (!result.success) throw ApiError.badRequest(result.error || "Failed to save replay");
   res.json({ success: true });
 });
