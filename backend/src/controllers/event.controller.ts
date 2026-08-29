@@ -6,6 +6,7 @@ import { RunOfShowSegment } from "../models/RunOfShowSegment.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
+import { notifyEditorsOfHighlights } from "./highlight.controller";
 
 export const createEvent = asyncHandler(async (req: Request, res: Response) => {
   const { teamId, title, scheduledStart, cameraCount } = req.body;
@@ -162,6 +163,8 @@ export const endEvent = asyncHandler(async (req: Request, res: Response) => {
     status: event.status,
     endedAt: event.endedAt,
   });
+
+  await notifyEditorsOfHighlights(eventId, teamId, event.title);
 
   res.json({ success: true, data: { status: event.status, endedAt: event.endedAt } });
 });

@@ -1,9 +1,19 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { EquipmentStatus } from "../models/EquipmentStatus.model";
+import { Membership } from "../models/Membership.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
+import { createNotification } from "../services/notification.service";
+import { PERMISSIONS, WILDCARD_PERMISSION } from "../utils/permissions";
+
+const ISSUE_LABELS: Record<string, string> = {
+  battery_low: "Battery low",
+  storage_full: "Storage almost full",
+  equipment_fault: "Equipment fault",
+  other: "Equipment issue",
+};
 
 export const reportIssue = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
@@ -22,6 +32,25 @@ export const reportIssue = asyncHandler(async (req: Request, res: Response) => {
   const populated = await issue.populate("reportedBy", "firstName lastName");
 
   emitToTeam(teamId, "equipment:new", { eventId, issue: populated });
+
+  const memberships = await Membership.find({ teamId, status: "active" }).populate("roleId");
+  const managers = memberships.filter((m) => {
+    const role = m.roleId as any;
+    return role?.permissions?.includes(WILDCARD_PERMISSION) || role?.permissions?.includes(PERMISSIONS.EQUIPMENT_MANAGE);
+  });
+
+  await Promise.all(
+    managers.map((m) =>
+      createNotification({
+        userId: m.userId,
+        teamId,
+        eventId,
+        type: "equipment",
+        title: ISSUE_LABELS[issueType] || "Equipment issue",
+        body: note,
+      })
+    )
+  );
 
   res.status(201).json({ success: true, data: populated });
 });

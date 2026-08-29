@@ -23,6 +23,7 @@ import { ChecklistTemplateEditorPage } from "@/pages/setup/ChecklistTemplateEdit
 import { SchedulePage } from "@/pages/setup/SchedulePage";
 import { RolesManagementPage } from "@/pages/setup/RolesManagementPage";
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { EditorWorkspacePage } from "@/pages/setup/EditorWorkspacePage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -55,6 +56,7 @@ export function AppRouter() {
           <Route path="/teams/:teamId/schedule" element={<SchedulePage />} />
           <Route path="/teams/:teamId/roles" element={<RolesManagementPage />} />
           <Route path="/system-console" element={<AdminDashboardPage />} />
+          <Route path="/teams/:teamId/editor" element={<EditorWorkspacePage />} />
           <Route path="/events/:eventId" element={<EventDetailPage />} />
           <Route path="/events/:eventId/run-of-show" element={<RunOfShowEditorPage />} />
           <Route path="/events/:eventId/highlights" element={<HighlightsPage />} />

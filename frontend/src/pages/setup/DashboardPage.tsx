@@ -43,7 +43,14 @@ export function DashboardPage() {
 
       <div className="flex flex-col gap-3">
         {data?.map((m) => (
-          <Link key={m._id} to={`/teams/${m.teamId._id}/events`}>
+          <Link
+            key={m._id}
+            to={
+              m.roleId.name === "Editor"
+                ? `/teams/${m.teamId._id}/editor`
+                : `/teams/${m.teamId._id}/events`
+            }
+          >
             <Card className="flex items-center justify-between !p-5 hover:border-accent-teal/50 transition-colors">
               <div>
                 <p className="font-semibold">{m.teamId.name}</p>
