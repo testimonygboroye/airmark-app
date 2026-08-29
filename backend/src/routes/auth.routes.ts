@@ -6,9 +6,14 @@ import { authRateLimiter } from "../middleware/rateLimiter.middleware";
 import {
   registerSchema,
   loginSchema,
+  verify2FALoginSchema,
   verifyEmailSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  confirm2FASchema,
+  disable2FASchema,
 } from "../validators/auth.validator";
 
 const router = Router();
@@ -16,10 +21,16 @@ const router = Router();
 router.post("/register", authRateLimiter, validate(registerSchema), authController.register);
 router.post("/verify-email", authRateLimiter, validate(verifyEmailSchema), authController.verifyEmail);
 router.post("/login", authRateLimiter, validate(loginSchema), authController.login);
+router.post("/2fa/login-verify", authRateLimiter, validate(verify2FALoginSchema), authController.verify2FALogin);
 router.post("/refresh", authController.refresh);
 router.post("/logout", authController.logout);
 router.post("/forgot-password", authRateLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 router.post("/reset-password", authRateLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.get("/me", requireAuth, authController.getMe);
+router.patch("/me", requireAuth, validate(updateProfileSchema), authController.updateProfile);
+router.post("/change-password", requireAuth, validate(changePasswordSchema), authController.changePassword);
+router.post("/2fa/setup", requireAuth, authController.setup2FA);
+router.post("/2fa/confirm", requireAuth, validate(confirm2FASchema), authController.confirmSetup2FA);
+router.post("/2fa/disable", requireAuth, validate(disable2FASchema), authController.disable2FA);
 
 export default router;

@@ -16,6 +16,9 @@ export interface IUser extends Document {
   passwordResetTokenHash?: string;
   passwordResetExpires?: Date;
   pendingInviteId?: Types.ObjectId;
+  twoFactorSecret?: string;
+  twoFactorEnabled: boolean;
+  twoFactorBackupCodeHashes: string[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -42,6 +45,9 @@ const userSchema = new Schema<IUser>(
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
     pendingInviteId: { type: Schema.Types.ObjectId, ref: "TeamInvite", select: false },
+    twoFactorSecret: { type: String, select: false },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorBackupCodeHashes: { type: [String], default: [], select: false },
   },
   { timestamps: true }
 );

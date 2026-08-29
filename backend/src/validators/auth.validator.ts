@@ -46,6 +46,13 @@ export const loginSchema = z.object({
   }),
 });
 
+export const verify2FALoginSchema = z.object({
+  body: z.object({
+    pendingToken: z.string().min(1),
+    code: z.string().trim().min(6).max(20),
+  }),
+});
+
 export const verifyEmailSchema = z.object({
   body: z.object({
     token: z.string().min(1),
@@ -69,4 +76,37 @@ export const resetPasswordSchema = z.object({
       message: "Passwords do not match",
       path: ["confirmNewPassword"],
     }),
+});
+
+export const updateProfileSchema = z.object({
+  body: z.object({
+    firstName: nameField(true),
+    middleName: nameField(false),
+    lastName: nameField(true),
+  }),
+});
+
+export const changePasswordSchema = z.object({
+  body: z
+    .object({
+      currentPassword: z.string().min(1),
+      newPassword: passwordRules,
+      confirmNewPassword: z.string().min(1),
+    })
+    .refine((data) => data.newPassword === data.confirmNewPassword, {
+      message: "Passwords do not match",
+      path: ["confirmNewPassword"],
+    }),
+});
+
+export const confirm2FASchema = z.object({
+  body: z.object({
+    code: z.string().trim().min(6).max(10),
+  }),
+});
+
+export const disable2FASchema = z.object({
+  body: z.object({
+    password: z.string().min(1),
+  }),
 });

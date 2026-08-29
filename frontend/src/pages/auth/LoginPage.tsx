@@ -19,20 +19,70 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
     try {
       const { data } = await apiClient.post("/auth/login", form);
-      setAuth(data.data.accessToken, data.data.user);
-      connectSocket(data.data.accessToken);
-      navigate("/dashboard");
+      if (data.data.requires2FA) {
+        setPendingToken(data.data.pendingToken);
+      } else {
+        setAuth(data.data.accessToken, data.data.user);
+        connectSocket(data.data.accessToken);
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(getErrorMessage(err, "Invalid email or password."));
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handle2FASubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+    try {
+      const { data } = await apiClient.post("/auth/2fa/login-verify", { pendingToken, code: totpCode });
+      setAuth(data.data.accessToken, data.data.user);
+      connectSocket(data.data.accessToken);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(getErrorMessage(err, "Invalid authentication code."));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (pendingToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-navy px-4">
+        <Card className="max-w-md w-full">
+          <Logo />
+          <h1 className="font-display text-xl font-semibold mt-6 mb-1">Two-factor authentication</h1>
+          <p className="text-sm text-standby-slate mb-6">Enter the code from your authenticator app.</p>
+
+          <form onSubmit={handle2FASubmit} className="flex flex-col gap-4">
+            <input
+              autoFocus
+              placeholder="6-digit code"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              maxLength={20}
+              className="text-sm rounded-lg border border-standby-slate/30 px-4 py-3 text-center tracking-widest bg-white dark:bg-navy/60"
+            />
+            {error && <p className="text-sm text-signal-red">{error}</p>}
+            <Button type="submit" isLoading={isLoading} disabled={totpCode.length < 6}>
+              Verify
+            </Button>
+          </form>
+        </Card>
+      </div>
+    );
   }
 
   return (

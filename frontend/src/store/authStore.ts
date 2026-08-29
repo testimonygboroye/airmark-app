@@ -11,11 +11,6 @@ interface AuthState {
   setHydrating: (value: boolean) => void;
 }
 
-/**
- * Access token lives in memory only — never localStorage — per security
- * baseline. The refresh token is a separate httpOnly cookie the browser
- * manages automatically; this store never touches it directly.
- */
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   user: null,

@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
+import { authenticator } from "otplib";
+import QRCode from "qrcode";
+import crypto from "crypto";
 import { User } from "../models/User.model";
 import { RefreshToken } from "../models/RefreshToken.model";
 import { TeamInvite } from "../models/TeamInvite.model";
@@ -12,6 +15,7 @@ import {
   REFRESH_COOKIE_NAME,
 } from "../services/token.service";
 import { generateSecureToken, hashRefreshToken } from "../utils/jwt.util";
+import { signPending2FAToken, verifyPending2FAToken } from "../utils/twoFactorToken.util";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../services/email.service";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
@@ -31,8 +35,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     if (invite && invite.email === email) {
       pendingInviteId = invite._id as Types.ObjectId;
     }
-    // Silently ignore invalid/mismatched invite tokens — registration
-    // still succeeds as a normal standalone account either way.
   }
 
   const passwordHash = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
@@ -111,7 +113,7 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+passwordHash");
+  const user = await User.findOne({ email }).select("+passwordHash +twoFactorEnabled");
   if (!user) {
     throw ApiError.unauthorized("Invalid email or password");
   }
@@ -125,6 +127,14 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw ApiError.forbidden("Please verify your email before logging in");
   }
 
+  if (user.twoFactorEnabled) {
+    const pendingToken = signPending2FAToken((user._id as Types.ObjectId).toString());
+    return res.json({
+      success: true,
+      data: { requires2FA: true, pendingToken },
+    });
+  }
+
   const { accessToken } = await issueTokenPair(
     user._id as Types.ObjectId,
     user.isSuperAdmin,
@@ -136,6 +146,61 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     data: {
       accessToken,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        middleName: user.middleName,
+        lastName: user.lastName,
+        email: user.email,
+        isSuperAdmin: user.isSuperAdmin,
+      },
+    },
+  });
+});
+
+export const verify2FALogin = asyncHandler(async (req: Request, res: Response) => {
+  const { pendingToken, code } = req.body;
+
+  let payload;
+  try {
+    payload = verifyPending2FAToken(pendingToken);
+  } catch {
+    throw ApiError.unauthorized("This login attempt has expired. Please log in again.");
+  }
+
+  const user = await User.findById(payload.userId).select(
+    "+twoFactorSecret +twoFactorEnabled +twoFactorBackupCodeHashes"
+  );
+  if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+    throw ApiError.unauthorized("Two-factor authentication is not set up correctly for this account");
+  }
+
+  const isValidTotp = authenticator.check(code, user.twoFactorSecret);
+
+  let usedBackupCode = false;
+  if (!isValidTotp) {
+    const codeHash = crypto.createHash("sha256").update(code.trim()).digest("hex");
+    const backupIndex = user.twoFactorBackupCodeHashes.indexOf(codeHash);
+    if (backupIndex === -1) {
+      throw ApiError.unauthorized("Invalid authentication code");
+    }
+    user.twoFactorBackupCodeHashes.splice(backupIndex, 1);
+    await user.save();
+    usedBackupCode = true;
+  }
+
+  const { accessToken } = await issueTokenPair(
+    user._id as Types.ObjectId,
+    user.isSuperAdmin,
+    res,
+    { userAgent: req.headers["user-agent"], ipAddress: req.ip }
+  );
+
+  res.json({
+    success: true,
+    data: {
+      accessToken,
+      usedBackupCode,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -233,8 +298,33 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id).select("+twoFactorEnabled");
+  if (!user) throw ApiError.notFound("User not found");
+
+  res.json({
+    success: true,
+    data: {
+      id: user._id,
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
+      isEmailVerified: user.isEmailVerified,
+      twoFactorEnabled: user.twoFactorEnabled,
+    },
+  });
+});
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const { firstName, middleName, lastName } = req.body;
   const user = await User.findById(req.user!.id);
   if (!user) throw ApiError.notFound("User not found");
+
+  user.firstName = firstName;
+  user.middleName = middleName || undefined;
+  user.lastName = lastName;
+  await user.save();
 
   res.json({
     success: true,
@@ -248,4 +338,70 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
       isEmailVerified: user.isEmailVerified,
     },
   });
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user!.id).select("+passwordHash");
+  if (!user) throw ApiError.notFound("User not found");
+
+  const valid = await user.comparePassword(currentPassword);
+  if (!valid) throw ApiError.unauthorized("Current password is incorrect");
+
+  user.passwordHash = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
+  await user.save();
+
+  await RefreshToken.updateMany({ userId: user._id }, { revoked: true });
+
+  res.json({ success: true, message: "Password changed. Please log in again." });
+});
+
+/** 2FA setup — restricted to Super Admin accounts per security baseline recommendation. */
+export const setup2FA = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id);
+  if (!user) throw ApiError.notFound("User not found");
+  if (!user.isSuperAdmin) throw ApiError.forbidden("Two-factor authentication is currently available for Founder/Super Admin accounts only");
+
+  const secret = authenticator.generateSecret();
+  user.twoFactorSecret = secret;
+  await user.save();
+
+  const otpauthUrl = authenticator.keyuri(user.email, "Airmark", secret);
+  const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+  res.json({ success: true, data: { qrCodeDataUrl, secret } });
+});
+
+export const confirmSetup2FA = asyncHandler(async (req: Request, res: Response) => {
+  const { code } = req.body;
+  const user = await User.findById(req.user!.id).select("+twoFactorSecret");
+  if (!user?.twoFactorSecret) throw ApiError.badRequest("Start 2FA setup first");
+
+  const isValid = authenticator.check(code, user.twoFactorSecret);
+  if (!isValid) throw ApiError.badRequest("Invalid code. Please try again.");
+
+  const backupCodes = Array.from({ length: 8 }, () => crypto.randomBytes(5).toString("hex"));
+  const backupCodeHashes = backupCodes.map((c) => crypto.createHash("sha256").update(c).digest("hex"));
+
+  user.twoFactorEnabled = true;
+  user.twoFactorBackupCodeHashes = backupCodeHashes;
+  await user.save();
+
+  res.json({ success: true, data: { backupCodes } });
+});
+
+export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
+  const { password } = req.body;
+  const user = await User.findById(req.user!.id).select("+passwordHash");
+  if (!user) throw ApiError.notFound("User not found");
+
+  const valid = await user.comparePassword(password);
+  if (!valid) throw ApiError.unauthorized("Password is incorrect");
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  user.twoFactorBackupCodeHashes = [];
+  await user.save();
+
+  res.json({ success: true, message: "Two-factor authentication disabled" });
 });
