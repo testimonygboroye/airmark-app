@@ -1,10 +1,11 @@
 import { Router } from "express";
 import * as teamController from "../controllers/team.controller";
 import { teamChecklistRouter } from "./checklist.routes";
+import roleRoutes from "./role.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
-import { createTeamSchema } from "../validators/team.validator";
+import { createTeamSchema, updateMemberRoleSchema } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router();
@@ -17,6 +18,13 @@ router.get(
   requirePermission(PERMISSIONS.TEAM_VIEW),
   teamController.getTeamMembers
 );
+router.patch(
+  "/:teamId/members/:membershipId/role",
+  validate(updateMemberRoleSchema),
+  requirePermission(PERMISSIONS.MEMBER_INVITE),
+  teamController.updateMemberRole
+);
 router.use("/:teamId/checklist-templates", teamChecklistRouter);
+router.use("/:teamId/roles", roleRoutes);
 
 export default router;

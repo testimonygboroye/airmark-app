@@ -4,6 +4,7 @@ import { Team } from "../models/Team.model";
 import { Membership } from "../models/Membership.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
 import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError";
 
 function slugify(name: string): string {
   return (
@@ -75,4 +76,23 @@ export const getTeamMembers = asyncHandler(async (req: Request, res: Response) =
     .populate("roleId", "name rank");
 
   res.json({ success: true, data: memberships });
+});
+
+export const updateMemberRole = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const membershipId = req.params.membershipId as string;
+  const { roleId } = req.body;
+
+  const membership = await Membership.findOne({ _id: membershipId, teamId });
+  if (!membership) throw ApiError.notFound("Membership not found");
+
+  membership.roleId = new Types.ObjectId(roleId);
+  await membership.save();
+
+  const populated = await membership.populate([
+    { path: "userId", select: "firstName lastName email" },
+    { path: "roleId", select: "name rank" },
+  ]);
+
+  res.json({ success: true, data: populated });
 });

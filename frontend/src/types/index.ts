@@ -218,3 +218,30 @@ export interface FavoriteOverlayRecord {
   label: string;
   sceneItemId: number;
 }
+
+export interface AdminTeamEntry {
+  _id: string;
+  name: string;
+  slug: string;
+  createdBy: { _id: string; firstName: string; lastName: string; email: string };
+  createdAt: string;
+  memberCount: number;
+}
+
+export interface AdminUserEntry {
+  _id: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  isSuperAdmin: boolean;
+  isEmailVerified: boolean;
+  createdAt: string;
+}
+
+export interface AdminStats {
+  teamCount: number;
+  userCount: number;
+  verifiedCount: number;
+  unverifiedCount: number;
+}
