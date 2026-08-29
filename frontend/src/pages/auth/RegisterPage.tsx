@@ -40,6 +40,9 @@ export function RegisterPage() {
     confirmPassword: "",
   });
   const [inviteInfo, setInviteInfo] = useState<{ teamName: string; roleName: string } | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<"checking" | "valid" | "invalid" | "none">(
+    inviteToken ? "checking" : "none"
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -50,8 +53,11 @@ export function RegisterPage() {
     if (!inviteToken) return;
     apiClient
       .get(`/invites/${inviteToken}`)
-      .then((res) => setInviteInfo(res.data.data))
-      .catch(() => {});
+      .then((res) => {
+        setInviteInfo(res.data.data);
+        setInviteStatus("valid");
+      })
+      .catch(() => setInviteStatus("invalid"));
   }, [inviteToken]);
 
   function validateField(field: keyof FormState, values: FormState): string | null {
@@ -123,7 +129,7 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
         confirmPassword: form.confirmPassword,
-        inviteToken,
+        inviteToken: inviteStatus === "valid" ? inviteToken : undefined,
       });
       setSuccess(true);
     } catch (err) {
@@ -141,7 +147,7 @@ export function RegisterPage() {
           <h1 className="font-display text-xl font-semibold mt-6 mb-2">Check your inbox</h1>
           <p className="text-sm text-standby-slate">
             We sent a verification link to <strong>{form.email}</strong>.
-            {inviteInfo && ` Once verified, you'll automatically join ${inviteInfo.teamName}.`}
+            {inviteStatus === "valid" && inviteInfo && ` Once verified, you'll automatically join ${inviteInfo.teamName}.`}
           </p>
           <Link to="/login" className="inline-block mt-6 text-accent-teal font-medium text-sm">
             Back to login
@@ -157,12 +163,25 @@ export function RegisterPage() {
         <Logo />
         <h1 className="font-display text-xl font-semibold mt-6 mb-1">Create your account</h1>
 
-        {inviteInfo ? (
+        {inviteStatus === "checking" && (
+          <p className="text-sm text-standby-slate mb-6">Checking your invitation…</p>
+        )}
+
+        {inviteStatus === "valid" && inviteInfo && (
           <p className="text-sm text-accent-teal mb-6">
             You've been invited to join <strong>{inviteInfo.teamName}</strong> as{" "}
             <strong>{inviteInfo.roleName}</strong>.
           </p>
-        ) : (
+        )}
+
+        {inviteStatus === "invalid" && (
+          <div className="mb-6 rounded-lg bg-signal-red/10 border border-signal-red/30 px-4 py-3 text-sm text-signal-red">
+            This invitation link is invalid or has expired. You can still create a regular account below, or ask
+            your director to send a new invite.
+          </div>
+        )}
+
+        {inviteStatus === "none" && (
           <p className="text-sm text-standby-slate mb-6">
             Coordinate your live production team in minutes.
           </p>
@@ -191,7 +210,7 @@ export function RegisterPage() {
             label="Email"
             type="email"
             value={form.email}
-            disabled={!!inviteEmail}
+            disabled={inviteStatus === "valid" && !!inviteEmail}
             onChange={(e) => updateField("email", e.target.value)}
             error={fieldErrors.email ?? undefined}
           />
@@ -213,7 +232,7 @@ export function RegisterPage() {
 
           {serverError && <p className="text-sm text-signal-red">{serverError}</p>}
 
-          <Button type="submit" isLoading={isLoading} className="mt-2">
+          <Button type="submit" isLoading={isLoading} className="mt-2" disabled={inviteStatus === "checking"}>
             Create account
           </Button>
         </form>
