@@ -31,6 +31,7 @@ export const registerSchema = z.object({
       email: z.string().trim().toLowerCase().email(),
       password: passwordRules,
       confirmPassword: z.string().min(1),
+      inviteToken: z.string().optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: "Passwords do not match",

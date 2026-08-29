@@ -23,9 +23,14 @@ export function EventsListPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <h1 className="font-display text-2xl font-semibold">Events</h1>
         <div className="flex gap-2">
+          {hasPermission("member:invite") && (
+            <Link to={`/teams/${teamId}/members`}>
+              <Button variant="ghost">Members</Button>
+            </Link>
+          )}
           <Link to={`/teams/${teamId}/schedule`}>
             <Button variant="secondary">Schedule</Button>
           </Link>

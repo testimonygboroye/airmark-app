@@ -93,12 +93,37 @@ export async function sendPasswordResetEmail(
   });
 }
 
-/**
- * Fetches account info from Brevo. Costs nothing, sends no email — used
- * purely to register genuine API activity so Brevo's 90-day inactivity
- * expiry (even on no-expiry keys) never triggers. Called by the daily
- * keep-alive route.
- */
+export async function sendTeamInviteEmail(
+  to: string,
+  teamName: string,
+  roleName: string,
+  inviterName: string,
+  inviteUrl: string
+): Promise<void> {
+  await sendTransactionalEmail({
+    to,
+    subject: `You've been invited to join ${teamName} on Airmark`,
+    htmlContent: `
+      <div style="font-family: -apple-system, Arial, sans-serif; background:#0B0F14; padding:32px; color:#F7F8FA;">
+        <h1 style="color:#2DB6C4; font-size:20px;">You're invited to join ${teamName}</h1>
+        <p style="font-size:15px; line-height:1.6;">
+          ${inviterName} has invited you to join <strong>${teamName}</strong> on Airmark as
+          <strong>${roleName}</strong>.
+        </p>
+        <a href="${inviteUrl}"
+           style="display:inline-block; margin-top:16px; padding:12px 24px;
+                  background:#E4293B; color:#ffffff; text-decoration:none;
+                  border-radius:6px; font-weight:600;">
+          Accept Invitation
+        </a>
+        <p style="font-size:12px; color:#3A4A5C; margin-top:24px;">
+          This invitation expires in 7 days. If you weren't expecting this, you can ignore it.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function pingBrevoAccount(): Promise<{ email: string }> {
   const response = await brevoClient.get("/account");
   return { email: response.data.email };

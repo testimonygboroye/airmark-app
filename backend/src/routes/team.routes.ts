@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as teamController from "../controllers/team.controller";
 import { teamChecklistRouter } from "./checklist.routes";
 import roleRoutes from "./role.routes";
+import inviteRoutes from "./invite.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
@@ -26,5 +27,6 @@ router.patch(
 );
 router.use("/:teamId/checklist-templates", teamChecklistRouter);
 router.use("/:teamId/roles", roleRoutes);
+router.use("/:teamId/invites", inviteRoutes);
 
 export default router;

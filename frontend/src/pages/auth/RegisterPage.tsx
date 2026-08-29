@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -27,19 +27,32 @@ interface FormState {
 type FieldErrors = Partial<Record<keyof FormState, string | null>>;
 
 export function RegisterPage() {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("inviteToken") || undefined;
+  const inviteEmail = searchParams.get("email") || "";
+
   const [form, setForm] = useState<FormState>({
     firstName: "",
     middleName: "",
     lastName: "",
-    email: "",
+    email: inviteEmail,
     password: "",
     confirmPassword: "",
   });
+  const [inviteInfo, setInviteInfo] = useState<{ teamName: string; roleName: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    apiClient
+      .get(`/invites/${inviteToken}`)
+      .then((res) => setInviteInfo(res.data.data))
+      .catch(() => {});
+  }, [inviteToken]);
 
   function validateField(field: keyof FormState, values: FormState): string | null {
     switch (field) {
@@ -80,11 +93,8 @@ export function RegisterPage() {
     const next = { ...form, [field]: value };
     setForm(next);
 
-    // Only live-validate after the first submit attempt — before that,
-    // no red borders appear no matter what the user types or skips.
     if (hasAttemptedSubmit) {
       setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, next) }));
-      // Confirm-password depends on password's current value too — recheck it live.
       if (field === "password") {
         setFieldErrors((prev) => ({
           ...prev,
@@ -94,7 +104,7 @@ export function RegisterPage() {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
     setHasAttemptedSubmit(true);
@@ -113,6 +123,7 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
         confirmPassword: form.confirmPassword,
+        inviteToken,
       });
       setSuccess(true);
     } catch (err) {
@@ -129,8 +140,8 @@ export function RegisterPage() {
           <Logo />
           <h1 className="font-display text-xl font-semibold mt-6 mb-2">Check your inbox</h1>
           <p className="text-sm text-standby-slate">
-            We sent a verification link to <strong>{form.email}</strong>. Click it to activate
-            your account, then come back to log in.
+            We sent a verification link to <strong>{form.email}</strong>.
+            {inviteInfo && ` Once verified, you'll automatically join ${inviteInfo.teamName}.`}
           </p>
           <Link to="/login" className="inline-block mt-6 text-accent-teal font-medium text-sm">
             Back to login
@@ -145,9 +156,17 @@ export function RegisterPage() {
       <Card className="max-w-md w-full">
         <Logo />
         <h1 className="font-display text-xl font-semibold mt-6 mb-1">Create your account</h1>
-        <p className="text-sm text-standby-slate mb-6">
-          Coordinate your live production team in minutes.
-        </p>
+
+        {inviteInfo ? (
+          <p className="text-sm text-accent-teal mb-6">
+            You've been invited to join <strong>{inviteInfo.teamName}</strong> as{" "}
+            <strong>{inviteInfo.roleName}</strong>.
+          </p>
+        ) : (
+          <p className="text-sm text-standby-slate mb-6">
+            Coordinate your live production team in minutes.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <NameInput
@@ -172,6 +191,7 @@ export function RegisterPage() {
             label="Email"
             type="email"
             value={form.email}
+            disabled={!!inviteEmail}
             onChange={(e) => updateField("email", e.target.value)}
             error={fieldErrors.email ?? undefined}
           />

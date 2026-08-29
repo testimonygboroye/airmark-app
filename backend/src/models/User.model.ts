@@ -15,6 +15,7 @@ export interface IUser extends Document {
   emailVerificationExpires?: Date;
   passwordResetTokenHash?: string;
   passwordResetExpires?: Date;
+  pendingInviteId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -40,6 +41,7 @@ const userSchema = new Schema<IUser>(
     emailVerificationExpires: { type: Date, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    pendingInviteId: { type: Schema.Types.ObjectId, ref: "TeamInvite", select: false },
   },
   { timestamps: true }
 );

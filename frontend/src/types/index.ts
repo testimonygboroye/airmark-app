@@ -259,3 +259,13 @@ export interface NotificationRecord {
   read: boolean;
   createdAt: string;
 }
+
+export interface TeamInviteRecord {
+  _id: string;
+  teamId: string;
+  email: string;
+  roleId: { _id: string; name: string };
+  status: "pending" | "accepted" | "expired";
+  expiresAt: string;
+  createdAt: string;
+}
