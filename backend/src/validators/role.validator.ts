@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { PERMISSIONS } from "../utils/permissions";
 
-const validPermissionKeys = [...Object.values(PERMISSIONS), "*"] as [string, ...string[]];
+const validPermissionKeys = [
+  ...Object.values(PERMISSIONS),
+  "*",
+] as unknown as [string, ...string[]];
 
 export const createRoleSchema = z.object({
   body: z.object({
