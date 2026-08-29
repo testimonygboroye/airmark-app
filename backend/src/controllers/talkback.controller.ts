@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { TalkbackMessage } from "../models/TalkbackMessage.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { emitToTeam } from "../sockets";
+import { createNotification } from "../services/notification.service";
 
 export const sendTalkback = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
@@ -19,10 +20,16 @@ export const sendTalkback = asyncHandler(async (req: Request, res: Response) => 
 
   const populated = await message.populate("fromUserId", "firstName lastName");
 
-  // Broadcast to the whole team room, but tagged with toUserId — the
-  // frontend filters client-side so only the intended operator's screen
-  // actually displays it, keeping this targeted rather than team-wide.
   emitToTeam(teamId, "talkback:new", { eventId, message: populated });
+
+  await createNotification({
+    userId: toUserId,
+    teamId,
+    eventId,
+    type: "talkback",
+    title: "Director cue",
+    body: text,
+  });
 
   res.status(201).json({ success: true, data: populated });
 });

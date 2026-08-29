@@ -245,3 +245,17 @@ export interface AdminStats {
   verifiedCount: number;
   unverifiedCount: number;
 }
+
+export type NotificationType = "talkback" | "signal" | "equipment" | "tally" | "ros" | "system";
+
+export interface NotificationRecord {
+  _id: string;
+  userId: string;
+  teamId: string;
+  eventId?: string;
+  type: NotificationType;
+  title: string;
+  body?: string;
+  read: boolean;
+  createdAt: string;
+}

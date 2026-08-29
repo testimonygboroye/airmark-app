@@ -1,9 +1,20 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { Signal } from "../models/Signal.model";
+import { Membership } from "../models/Membership.model";
+import { Role } from "../models/Role.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
+import { createNotification } from "../services/notification.service";
+import { PERMISSIONS, WILDCARD_PERMISSION } from "../utils/permissions";
+
+const SIGNAL_LABELS: Record<string, string> = {
+  battery_low: "Battery low",
+  need_backup: "Need backup",
+  audio_issue: "Audio issue",
+  custom: "Note",
+};
 
 export const sendSignal = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
@@ -21,6 +32,25 @@ export const sendSignal = asyncHandler(async (req: Request, res: Response) => {
   const populated = await signal.populate("fromUserId", "firstName lastName");
 
   emitToTeam(teamId, "signal:new", { eventId, signal: populated });
+
+  const memberships = await Membership.find({ teamId, status: "active" }).populate("roleId");
+  const managers = memberships.filter((m) => {
+    const role = m.roleId as any;
+    return role?.permissions?.includes(WILDCARD_PERMISSION) || role?.permissions?.includes(PERMISSIONS.SIGNAL_MANAGE);
+  });
+
+  await Promise.all(
+    managers.map((m) =>
+      createNotification({
+        userId: m.userId,
+        teamId,
+        eventId,
+        type: "signal",
+        title: SIGNAL_LABELS[type] || "Crew signal",
+        body: customText,
+      })
+    )
+  );
 
   res.status(201).json({ success: true, data: populated });
 });

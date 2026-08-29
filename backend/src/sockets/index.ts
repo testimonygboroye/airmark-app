@@ -24,6 +24,8 @@ export function initializeSocketServer(httpServer: HttpServer): SocketServer {
 
     console.log(`[socket] connected: user=${userId} socket=${socket.id}`);
 
+    socket.join(`user:${userId}`);
+
     try {
       const memberships = await Membership.find({
         userId,
