@@ -191,6 +191,7 @@ export interface ObsConnectionRecord {
   streamStatus?: ObsStreamStatus;
   recordStatus?: ObsRecordStatus;
   favoriteOverlays?: FavoriteOverlayRecord[];
+  watermarkSceneItemId?: number;
   introSceneName?: string;
   introDurationSeconds?: number;
   outroSceneName?: string;

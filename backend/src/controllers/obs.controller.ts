@@ -29,7 +29,7 @@ export const getObsStatus = asyncHandler(async (req: Request, res: Response) => 
   const connection = await ObsConnection.findOne({ eventId });
   res.json({
     success: true,
-    data: connection ?? { status: "disconnected", scenes: [], transitions: [], sceneItems: [] },
+    data: connection ?? { status: "disconnected", scenes: [], transitions: [], sceneItems: [], favoriteOverlays: [] },
   });
 });
 
@@ -111,15 +111,41 @@ export const triggerFallback = asyncHandler(async (req: Request, res: Response) 
 
 export const startStream = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
-  await requireConnectedBridge(eventId);
+  const connection = await requireConnectedBridge(eventId);
+
+  const mainScene = connection.currentProgramScene;
+
+  if (connection.introSceneName) {
+    await sendObsCommand(getSocketServer(), eventId, "SetCurrentProgramScene", {
+      sceneName: connection.introSceneName,
+    });
+  }
+
   const result = await sendObsCommand(getSocketServer(), eventId, "StartStream");
   if (!result.success) throw ApiError.badRequest(result.error || "Failed to start stream");
+
+  if (connection.introSceneName && mainScene) {
+    const durationMs = (connection.introDurationSeconds ?? 8) * 1000;
+    setTimeout(() => {
+      sendObsCommand(getSocketServer(), eventId, "SetCurrentProgramScene", { sceneName: mainScene });
+    }, durationMs);
+  }
+
   res.json({ success: true });
 });
 
 export const stopStream = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
-  await requireConnectedBridge(eventId);
+  const connection = await requireConnectedBridge(eventId);
+
+  if (connection.outroSceneName) {
+    await sendObsCommand(getSocketServer(), eventId, "SetCurrentProgramScene", {
+      sceneName: connection.outroSceneName,
+    });
+    const durationMs = (connection.outroDurationSeconds ?? 8) * 1000;
+    await new Promise((resolve) => setTimeout(resolve, durationMs));
+  }
+
   const result = await sendObsCommand(getSocketServer(), eventId, "StopStream");
   if (!result.success) throw ApiError.badRequest(result.error || "Failed to stop stream");
   res.json({ success: true });
@@ -187,7 +213,6 @@ export const stopCountdownOverlay = asyncHandler(async (req: Request, res: Respo
   res.json({ success: true });
 });
 
-/** Basic 1E: mute/volume of any input already present in the OBS setup — no interface required. */
 export const setAudioMute = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { inputName, muted } = req.body;
@@ -214,7 +239,6 @@ export const getAudioSources = asyncHandler(async (req: Request, res: Response) 
   res.json({ success: true, data: result.data });
 });
 
-/** 1I — OBS's native replay buffer, unrelated to hardware. */
 export const startReplayBuffer = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   await requireConnectedBridge(eventId);
@@ -229,4 +253,32 @@ export const saveReplayBuffer = asyncHandler(async (req: Request, res: Response)
   const result = await sendObsCommand(getSocketServer(), eventId, "SaveReplayBuffer");
   if (!result.success) throw ApiError.badRequest(result.error || "Failed to save replay");
   res.json({ success: true });
+});
+
+export const setFavoriteOverlays = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { favorites } = req.body;
+  const connection = await ObsConnection.findOneAndUpdate({ eventId }, { favoriteOverlays: favorites }, { new: true });
+  if (!connection) throw ApiError.notFound("OBS connection not found for this event");
+  res.json({ success: true, data: connection.favoriteOverlays });
+});
+
+export const setIntroOutro = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { introSceneName, introDurationSeconds, outroSceneName, outroDurationSeconds } = req.body;
+  const connection = await ObsConnection.findOneAndUpdate(
+    { eventId },
+    { introSceneName, introDurationSeconds, outroSceneName, outroDurationSeconds },
+    { new: true }
+  );
+  if (!connection) throw ApiError.notFound("OBS connection not found for this event");
+  res.json({
+    success: true,
+    data: {
+      introSceneName: connection.introSceneName,
+      introDurationSeconds: connection.introDurationSeconds,
+      outroSceneName: connection.outroSceneName,
+      outroDurationSeconds: connection.outroDurationSeconds,
+    },
+  });
 });
