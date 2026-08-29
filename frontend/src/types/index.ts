@@ -190,6 +190,11 @@ export interface ObsConnectionRecord {
   fallbackSceneName?: string;
   streamStatus?: ObsStreamStatus;
   recordStatus?: ObsRecordStatus;
+  favoriteOverlays?: FavoriteOverlayRecord[];
+  introSceneName?: string;
+  introDurationSeconds?: number;
+  outroSceneName?: string;
+  outroDurationSeconds?: number;
 }
 
 export interface ObsSceneItemRecord {
@@ -206,4 +211,9 @@ export interface ObsStreamStatus {
 
 export interface ObsRecordStatus {
   active: boolean;
+}
+
+export interface FavoriteOverlayRecord {
+  label: string;
+  sceneItemId: number;
 }

@@ -66,3 +66,24 @@ export const audioVolumeSchema = z.object({
   }),
   params: z.object({ eventId: z.string().min(1) }),
 });
+
+export const setFavoritesSchema = z.object({
+  body: z.object({
+    teamId: z.string().min(1),
+    favorites: z
+      .array(z.object({ label: z.string().trim().min(1).max(60), sceneItemId: z.number().int() }))
+      .max(10),
+  }),
+  params: z.object({ eventId: z.string().min(1) }),
+});
+
+export const setIntroOutroSchema = z.object({
+  body: z.object({
+    teamId: z.string().min(1),
+    introSceneName: z.string().trim().max(200).optional(),
+    introDurationSeconds: z.number().int().min(1).max(60).optional(),
+    outroSceneName: z.string().trim().max(200).optional(),
+    outroDurationSeconds: z.number().int().min(1).max(60).optional(),
+  }),
+  params: z.object({ eventId: z.string().min(1) }),
+});

@@ -23,6 +23,11 @@ export interface IObsRecordStatus {
   active: boolean;
 }
 
+export interface IFavoriteOverlay {
+  label: string;
+  sceneItemId: number;
+}
+
 export interface IObsConnection extends Document {
   _id: Types.ObjectId;
   eventId: Types.ObjectId;
@@ -37,6 +42,11 @@ export interface IObsConnection extends Document {
   sceneItems: IObsSceneItem[];
   fallbackSceneName?: string;
   watermarkSceneItemId?: number;
+  favoriteOverlays: IFavoriteOverlay[];
+  introSceneName?: string;
+  introDurationSeconds?: number;
+  outroSceneName?: string;
+  outroDurationSeconds?: number;
   streamStatus?: IObsStreamStatus;
   recordStatus?: IObsRecordStatus;
   connectedAt?: Date;
@@ -73,6 +83,11 @@ const obsRecordStatusSchema = new Schema<IObsRecordStatus>(
   { _id: false }
 );
 
+const favoriteOverlaySchema = new Schema<IFavoriteOverlay>(
+  { label: { type: String, required: true, maxlength: 60 }, sceneItemId: { type: Number, required: true } },
+  { _id: false }
+);
+
 const obsConnectionSchema = new Schema<IObsConnection>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true, unique: true, index: true },
@@ -87,6 +102,11 @@ const obsConnectionSchema = new Schema<IObsConnection>(
     sceneItems: { type: [obsSceneItemSchema], default: [] },
     fallbackSceneName: { type: String },
     watermarkSceneItemId: { type: Number },
+    favoriteOverlays: { type: [favoriteOverlaySchema], default: [] },
+    introSceneName: { type: String },
+    introDurationSeconds: { type: Number },
+    outroSceneName: { type: String },
+    outroDurationSeconds: { type: Number },
     streamStatus: { type: obsStreamStatusSchema },
     recordStatus: { type: obsRecordStatusSchema },
     connectedAt: { type: Date },

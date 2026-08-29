@@ -15,6 +15,12 @@ import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
 import { ObsTextOverlayPanel } from "@/components/live/ObsTextOverlayPanel";
 import { ObsHealthMonitor } from "@/components/live/ObsHealthMonitor";
 import { ObsFailsafeControls } from "@/components/live/ObsFailsafeControls";
+import { ObsWatermarkControls } from "@/components/live/ObsWatermarkControls";
+import { ObsCountdownOverlayControls } from "@/components/live/ObsCountdownOverlayControls";
+import { ObsAudioControls } from "@/components/live/ObsAudioControls";
+import { ObsReplayButton } from "@/components/live/ObsReplayButton";
+import { ObsFavoriteOverlays } from "@/components/live/ObsFavoriteOverlays";
+import { ObsIntroOutroSettings } from "@/components/live/ObsIntroOutroSettings";
 import { useCountdown } from "@/hooks/useCountdown";
 import type {
   EventRecord,
@@ -114,7 +120,32 @@ export function DirectorLiveView({
           )}
           <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
           {obsConnected && (
-            <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
+            <>
+              <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
+              <ObsWatermarkControls
+                eventId={eventId}
+                teamId={event.teamId}
+                items={obsConnection.sceneItems ?? []}
+                watermarkSceneItemId={obsConnection.watermarkSceneItemId}
+              />
+              <ObsCountdownOverlayControls
+                eventId={eventId}
+                teamId={event.teamId}
+                items={obsConnection.sceneItems ?? []}
+                countdownActive={countdownActive}
+              />
+              <ObsAudioControls eventId={eventId} teamId={event.teamId} />
+              <ObsReplayButton eventId={eventId} teamId={event.teamId} />
+              <ObsIntroOutroSettings
+                eventId={eventId}
+                teamId={event.teamId}
+                scenes={obsConnection.scenes}
+                introSceneName={obsConnection.introSceneName}
+                introDurationSeconds={obsConnection.introDurationSeconds}
+                outroSceneName={obsConnection.outroSceneName}
+                outroDurationSeconds={obsConnection.outroDurationSeconds}
+              />
+            </>
           )}
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
@@ -179,6 +210,12 @@ export function DirectorLiveView({
             transitions={obsConnection.transitions ?? []}
             currentTransition={obsConnection.currentTransition}
             transitionDurationMs={obsConnection.transitionDurationMs}
+          />
+          <ObsFavoriteOverlays
+            eventId={eventId}
+            teamId={event.teamId}
+            items={obsConnection.sceneItems ?? []}
+            favorites={obsConnection.favoriteOverlays ?? []}
           />
           <ObsSceneItemsPanel
             eventId={eventId}

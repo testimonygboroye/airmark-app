@@ -15,6 +15,8 @@ import {
   startCountdownOverlaySchema,
   audioMuteSchema,
   audioVolumeSchema,
+  setFavoritesSchema,
+  setIntroOutroSchema,
 } from "../validators/obs.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -44,5 +46,7 @@ router.patch("/audio/volume", validate(audioVolumeSchema), obsController.setAudi
 router.get("/audio/sources", obsController.getAudioSources);
 router.post("/replay-buffer/start", validate(teamOnlySchema), obsController.startReplayBuffer);
 router.post("/replay-buffer/save", validate(teamOnlySchema), obsController.saveReplayBuffer);
+router.put("/favorites", validate(setFavoritesSchema), obsController.setFavoriteOverlays);
+router.put("/intro-outro", validate(setIntroOutroSchema), obsController.setIntroOutro);
 
 export default router;
