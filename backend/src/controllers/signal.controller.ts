@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { Signal } from "../models/Signal.model";
 import { Membership } from "../models/Membership.model";
-import { Role } from "../models/Role.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
