@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
+import crypto from "crypto";
 import { TeamInvite } from "../models/TeamInvite.model";
 import { Membership } from "../models/Membership.model";
 import { User } from "../models/User.model";
@@ -12,7 +13,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
 
-export const createInvite = asyncHandler(async (req: Request, res: Response) => {
+export const createInvite = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const teamId = req.params.teamId as string;
   const { email, roleId } = req.body;
   const invitedBy = new Types.ObjectId(req.user!.id);
@@ -49,11 +50,12 @@ export const createInvite = asyncHandler(async (req: Request, res: Response) => 
       body: `Added as ${role.name}`,
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: `${existingUser.firstName} was added directly — they already have an Airmark account.`,
       data: { type: "added_directly" },
     });
+    return;
   }
 
   const existingInvite = await TeamInvite.findOne({ teamId, email, status: "pending" });
@@ -84,7 +86,6 @@ export const createInvite = asyncHandler(async (req: Request, res: Response) => 
 
 export const checkInvite = asyncHandler(async (req: Request, res: Response) => {
   const token = req.params.token as string;
-  const crypto = await import("crypto");
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
   const invite = await TeamInvite.findOne({ tokenHash, status: "pending", expiresAt: { $gt: new Date() } })
