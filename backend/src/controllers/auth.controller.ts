@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
-import { authenticator } from "otplib";
+import { generateSecret, generate, verify } from "otplib";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { User } from "../models/User.model";
@@ -110,7 +110,7 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export const login = asyncHandler(async (req: Request, res: Response) => {
+export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email }).select("+passwordHash +twoFactorEnabled");
@@ -127,12 +127,15 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw ApiError.forbidden("Please verify your email before logging in");
   }
 
-  if (user.twoFactorEnabled) {
+  // Kill switch: TWO_FACTOR_ENFORCEMENT_ENABLED=false on Render bypasses
+  // this entirely, regardless of any account's twoFactorEnabled setting.
+  if (user.twoFactorEnabled && env.TWO_FACTOR_ENFORCEMENT_ENABLED) {
     const pendingToken = signPending2FAToken((user._id as Types.ObjectId).toString());
-    return res.json({
+    res.json({
       success: true,
       data: { requires2FA: true, pendingToken },
     });
+    return;
   }
 
   const { accessToken } = await issueTokenPair(
@@ -175,10 +178,10 @@ export const verify2FALogin = asyncHandler(async (req: Request, res: Response) =
     throw ApiError.unauthorized("Two-factor authentication is not set up correctly for this account");
   }
 
-  const isValidTotp = authenticator.check(code, user.twoFactorSecret);
+  const totpResult = await verify({ secret: user.twoFactorSecret, token: code });
 
   let usedBackupCode = false;
-  if (!isValidTotp) {
+  if (!totpResult.valid) {
     const codeHash = crypto.createHash("sha256").update(code.trim()).digest("hex");
     const backupIndex = user.twoFactorBackupCodeHashes.indexOf(codeHash);
     if (backupIndex === -1) {
@@ -356,17 +359,17 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   res.json({ success: true, message: "Password changed. Please log in again." });
 });
 
-/** 2FA setup — restricted to Super Admin accounts per security baseline recommendation. */
 export const setup2FA = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user!.id);
   if (!user) throw ApiError.notFound("User not found");
   if (!user.isSuperAdmin) throw ApiError.forbidden("Two-factor authentication is currently available for Founder/Super Admin accounts only");
 
-  const secret = authenticator.generateSecret();
+  const secret = await generateSecret();
   user.twoFactorSecret = secret;
   await user.save();
 
-  const otpauthUrl = authenticator.keyuri(user.email, "Airmark", secret);
+  const issuer = "Airmark";
+  const otpauthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
   const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
   res.json({ success: true, data: { qrCodeDataUrl, secret } });
@@ -377,8 +380,8 @@ export const confirmSetup2FA = asyncHandler(async (req: Request, res: Response) 
   const user = await User.findById(req.user!.id).select("+twoFactorSecret");
   if (!user?.twoFactorSecret) throw ApiError.badRequest("Start 2FA setup first");
 
-  const isValid = authenticator.check(code, user.twoFactorSecret);
-  if (!isValid) throw ApiError.badRequest("Invalid code. Please try again.");
+  const result = await verify({ secret: user.twoFactorSecret, token: code });
+  if (!result.valid) throw ApiError.badRequest("Invalid code. Please try again.");
 
   const backupCodes = Array.from({ length: 8 }, () => crypto.randomBytes(5).toString("hex"));
   const backupCodeHashes = backupCodes.map((c) => crypto.createHash("sha256").update(c).digest("hex"));
