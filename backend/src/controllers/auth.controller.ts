@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
-import { generateSecret, generate, verify } from "otplib";
+import { generateSecret, verify } from "otplib";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { User } from "../models/User.model";
