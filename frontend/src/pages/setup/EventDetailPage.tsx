@@ -4,11 +4,19 @@ import { apiClient } from "@/lib/apiClient";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useTeamRole } from "@/hooks/useTeamRole";
+import { useNavigate } from "react-router";
 import type { EventRecord, CameraAssignmentRecord, TeamMemberEntry } from "@/types";
 
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.delete(`/events/${eventId}`);
+    },
+    onSuccess: () => navigate(`/teams/${data?.event.teamId}/events`),
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -58,6 +66,7 @@ export function EventDetailPage() {
   const canViewEquipment = hasPermission("equipment:manage");
   const canCompleteChecklist = hasPermission("checklist:complete");
   const canViewReadiness = hasPermission("checklist:manage");
+  const canDelete = hasPermission("event:manage");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -111,6 +120,14 @@ export function EventDetailPage() {
               >
                 View highlights
               </Link>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => confirm("Delete this event? This cannot be undone.") && deleteMutation.mutate()}
+                className="text-xs text-signal-red font-medium"
+              >
+                Delete event
+              </button>
             )}
             {canViewEquipment && (
               <Link

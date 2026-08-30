@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import { Team } from "../models/Team.model";
 import { Membership } from "../models/Membership.model";
+import { Role } from "../models/Role.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -95,4 +96,23 @@ export const updateMemberRole = asyncHandler(async (req: Request, res: Response)
   ]);
 
   res.json({ success: true, data: populated });
+});
+
+export const removeMember = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const membershipId = req.params.membershipId as string;
+
+  const membership = await Membership.findOne({ _id: membershipId, teamId }).populate("roleId");
+  if (!membership) throw ApiError.notFound("Membership not found");
+
+  const role = membership.roleId as any;
+  if (role?.name === "Team Owner") {
+    throw ApiError.badRequest("The Team Owner cannot be removed from their own team");
+  }
+  if (membership.userId.toString() === req.user!.id) {
+    throw ApiError.badRequest("You cannot remove yourself from the team");
+  }
+
+  await membership.deleteOne();
+  res.json({ success: true, message: "Member removed from team" });
 });

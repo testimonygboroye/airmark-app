@@ -168,3 +168,18 @@ export const endEvent = asyncHandler(async (req: Request, res: Response) => {
 
   res.json({ success: true, data: { status: event.status, endedAt: event.endedAt } });
 });
+
+export const deleteEvent = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+  if (event.status === "live") throw ApiError.badRequest("Cannot delete an event that is currently live");
+
+  await Promise.all([
+    CameraAssignment.deleteMany({ eventId }),
+    RunOfShowSegment.deleteMany({ eventId }),
+    event.deleteOne(),
+  ]);
+
+  res.json({ success: true, message: "Event deleted" });
+});

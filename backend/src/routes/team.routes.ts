@@ -6,7 +6,7 @@ import inviteRoutes from "./invite.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
-import { createTeamSchema, updateMemberRoleSchema } from "../validators/team.validator";
+import { createTeamSchema, updateMemberRoleSchema, removeMemberSchema } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router();
@@ -24,6 +24,12 @@ router.patch(
   validate(updateMemberRoleSchema),
   requirePermission(PERMISSIONS.MEMBER_INVITE),
   teamController.updateMemberRole
+);
+router.delete(
+  "/:teamId/members/:membershipId",
+  validate(removeMemberSchema),
+  requirePermission(PERMISSIONS.MEMBER_REMOVE),
+  teamController.removeMember
 );
 router.use("/:teamId/checklist-templates", teamChecklistRouter);
 router.use("/:teamId/roles", roleRoutes);

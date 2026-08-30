@@ -15,3 +15,10 @@ export const updateMemberRoleSchema = z.object({
     membershipId: z.string().min(1),
   }),
 });
+
+export const removeMemberSchema = z.object({
+  params: z.object({
+    teamId: z.string().min(1),
+    membershipId: z.string().min(1),
+  }),
+});

@@ -66,6 +66,14 @@ export function TeamMembersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] }),
   });
 
+  const removeMutation = useMutation({
+    mutationFn: async (membershipId: string) => {
+      await apiClient.delete(`/teams/${teamId}/members/${membershipId}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] }),
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -144,13 +152,27 @@ export function TeamMembersPage() {
       {membersLoading && <p className="text-sm text-standby-slate">Loading…</p>}
       <div className="flex flex-col gap-2">
         {members?.map((m) => (
-          <Card key={m._id} className="!p-4">
-            <p className="text-sm font-medium">
-              {m.userId.firstName} {m.userId.lastName}
-            </p>
-            <p className="text-xs text-standby-slate mt-0.5">
-              {m.userId.email} · {m.roleId.name}
-            </p>
+          <Card key={m._id} className="!p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">
+                {m.userId.firstName} {m.userId.lastName}
+              </p>
+              <p className="text-xs text-standby-slate mt-0.5">
+                {m.userId.email} · {m.roleId.name}
+              </p>
+            </div>
+            {m.roleId.name !== "Team Owner" && (
+              <button
+                onClick={() => {
+                  if (confirm(`Remove ${m.userId.firstName} from the team?`)) {
+                    removeMutation.mutate(m._id);
+                  }
+                }}
+                className="text-xs text-signal-red font-medium shrink-0"
+              >
+                Remove
+              </button>
+            )}
           </Card>
         ))}
       </div>

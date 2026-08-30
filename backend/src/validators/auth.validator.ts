@@ -10,7 +10,7 @@ const nameField = (required: boolean) => {
     .regex(NAME_PATTERN, "Only letters and hyphens between words are allowed (e.g. El-rufai)");
   return required
     ? base.min(1, "This field is required")
-    : z.union([base, z.literal("")]);
+    : z.union([base, z.literal("")]).optional();
 };
 
 const passwordRules = z

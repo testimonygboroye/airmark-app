@@ -33,6 +33,12 @@ router.post(
 router.get("/", eventController.getTeamEvents);
 router.get("/:eventId", eventController.getEventDetail);
 
+router.delete(
+  "/:eventId",
+  requirePermission(PERMISSIONS.EVENT_MANAGE),
+  eventController.deleteEvent
+);
+
 router.post(
   "/:eventId/cameras/:cameraId/live",
   validate(setTallySchema),

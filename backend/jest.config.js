@@ -5,4 +5,9 @@ module.exports = {
   testMatch: ["**/tests/**/*.test.ts"],
   testTimeout: 30000,
   verbose: true,
+  globals: {
+    "ts-jest": {
+      tsconfig: "tsconfig.jest.json",
+    },
+  },
 };
