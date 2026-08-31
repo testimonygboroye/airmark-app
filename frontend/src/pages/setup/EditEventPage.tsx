@@ -34,6 +34,7 @@ export function EditEventPage() {
   const updateMutation = useMutation({
     mutationFn: async () => {
       await apiClient.patch(`/events/${eventId}`, {
+        teamId: data!.event.teamId,
         title,
         scheduledStart: new Date(scheduledStart).toISOString(),
       });
@@ -59,7 +60,12 @@ export function EditEventPage() {
             <Button variant="ghost" onClick={() => navigate(`/events/${eventId}`)} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={() => updateMutation.mutate()} isLoading={updateMutation.isPending} className="flex-1">
+            <Button
+              onClick={() => updateMutation.mutate()}
+              isLoading={updateMutation.isPending}
+              disabled={!data}
+              className="flex-1"
+            >
               Save
             </Button>
           </div>
