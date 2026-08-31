@@ -41,7 +41,7 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
   }
 
   const { raw, hash } = generateSecureToken();
-  const invite = await TeamInvite.create({
+  await TeamInvite.create({
     teamId,
     email,
     roleId,

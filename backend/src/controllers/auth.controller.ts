@@ -474,7 +474,6 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   if (!valid) throw ApiError.unauthorized("Password is incorrect");
 
   const { Membership } = await import("../models/Membership.model");
-  const { Role } = await import("../models/Role.model");
   const { Team } = await import("../models/Team.model");
 
   const memberships = await Membership.find({ userId: user._id, status: "active" }).populate("roleId teamId");
