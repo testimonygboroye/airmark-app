@@ -1,20 +1,54 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
+import { useTeamRole } from "@/hooks/useTeamRole";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import type { TeamMemberEntry, TeamInviteRecord, Role } from "@/types";
+import type { TeamMemberEntry, TeamInviteRecord, Role, Membership } from "@/types";
 
 export function TeamMembersPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const queryClient = useQueryClient();
+  const { hasPermission } = useTeamRole(teamId);
+  const canManageTeam = hasPermission("team:manage");
+
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [editingName, setEditingName] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const [renameMessage, setRenameMessage] = useState<string | null>(null);
+
+  const { data: myTeams } = useQuery({
+    queryKey: ["myTeams"],
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: Membership[] }>("/teams/my");
+      return res.data.data;
+    },
+  });
+
+  const currentTeam = myTeams?.find((m) => m.teamId._id === teamId)?.teamId;
+
+  useEffect(() => {
+    if (currentTeam) setTeamName(currentTeam.name);
+  }, [currentTeam]);
+
+  const renameMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.patch(`/teams/${teamId}`, { name: teamName });
+    },
+    onSuccess: () => {
+      setEditingName(false);
+      setRenameMessage("Team renamed.");
+      queryClient.invalidateQueries({ queryKey: ["myTeams"] });
+      setTimeout(() => setRenameMessage(null), 3000);
+    },
+  });
 
   const { data: members, isLoading: membersLoading } = useQuery({
     queryKey: ["teamMembers", teamId],
@@ -52,7 +86,6 @@ export function TeamMembersPage() {
       setMessage(msg);
       setEmail("");
       setRoleId("");
-      queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
       queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] });
       setTimeout(() => setMessage(null), 4000);
     },
@@ -66,18 +99,6 @@ export function TeamMembersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] }),
   });
 
-  const [editingName, setEditingName] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const renameMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.patch(`/teams/${teamId}`, { name: teamName });
-    },
-    onSuccess: () => {
-      setEditingName(false);
-      queryClient.invalidateQueries({ queryKey: ["myTeams"] });
-    },
-  });
-
   const removeMutation = useMutation({
     mutationFn: async (membershipId: string) => {
       await apiClient.delete(`/teams/${teamId}/members/${membershipId}`);
@@ -88,12 +109,43 @@ export function TeamMembersPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-semibold">Team members</h1>
-        <Link to={`/teams/${teamId}/events`} className="text-xs text-accent-teal font-medium">
+      <div className="flex items-center justify-between mb-6 gap-3">
+        {editingName ? (
+          <div className="flex items-center gap-2 flex-1">
+            <Input label="" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="flex-1" />
+            <button
+              onClick={() => renameMutation.mutate()}
+              disabled={renameMutation.isPending || !teamName.trim()}
+              className="text-xs font-semibold text-accent-teal shrink-0"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => {
+                setEditingName(false);
+                setTeamName(currentTeam?.name ?? "");
+              }}
+              className="text-xs text-standby-slate shrink-0"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="font-display text-2xl font-semibold truncate">{currentTeam?.name ?? "Team members"}</h1>
+            {canManageTeam && (
+              <button onClick={() => setEditingName(true)} className="text-xs text-accent-teal font-medium shrink-0">
+                Rename
+              </button>
+            )}
+          </div>
+        )}
+        <Link to={`/teams/${teamId}/events`} className="text-xs text-accent-teal font-medium shrink-0">
           Back
         </Link>
       </div>
+
+      {renameMessage && <p className="text-sm text-accent-teal mb-4">{renameMessage}</p>}
 
       <Card className="mb-6">
         <p className="font-display text-sm font-semibold mb-3">Invite someone</p>
