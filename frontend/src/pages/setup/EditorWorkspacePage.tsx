@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { apiClient } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import type { EventRecord } from "@/types";
 
 export function EditorWorkspacePage() {
   const { teamId } = useParams<{ teamId: string }>();
 
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["events", teamId],
     queryFn: async () => {
       const res = await apiClient.get<{ data: EventRecord[] }>("/events", { params: { teamId } });
@@ -27,7 +29,14 @@ export function EditorWorkspacePage() {
 
       {isLoading && <p className="text-sm text-standby-slate">Loading…</p>}
 
-      {endedEvents.length === 0 && !isLoading && (
+      {isError && (
+        <Card className="text-center">
+          <p className="text-signal-red text-sm mb-3">{getErrorMessage(error)}</p>
+          <Button onClick={() => refetch()}>Retry</Button>
+        </Card>
+      )}
+
+      {!isLoading && !isError && endedEvents.length === 0 && (
         <Card className="text-center">
           <p className="text-standby-slate text-sm">No completed events yet.</p>
         </Card>

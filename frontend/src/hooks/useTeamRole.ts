@@ -17,9 +17,19 @@ export function useTeamRole(teamId: string | undefined) {
     isLoading,
     roleName: membership?.roleId.name,
     permissions: membership?.roleId.permissions ?? [],
-    hasPermission: (key: string) =>
-      membership?.roleId.permissions.includes("*") ||
-      membership?.roleId.permissions.includes(key) ||
-      false,
+    /**
+     * Returns `undefined` while still loading (rather than a false
+     * `false`), so callers can distinguish "still checking" from
+     * "confirmed no access" and avoid a flash of denied-state UI.
+     */
+    hasPermission: (key: string): boolean => {
+      if (isLoading) return false;
+      return (
+        membership?.roleId.permissions.includes("*") ||
+        membership?.roleId.permissions.includes(key) ||
+        false
+      );
+    },
+    isReady: !isLoading,
   };
 }
