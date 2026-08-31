@@ -10,37 +10,23 @@ export const createEventSchema = z.object({
 });
 
 export const setTallySchema = z.object({
-  body: z.object({
-    teamId: z.string().min(1),
-  }),
-  params: z.object({
-    eventId: z.string().min(1),
-    cameraId: z.string().min(1),
-  }),
+  body: z.object({ teamId: z.string().min(1) }),
+  params: z.object({ eventId: z.string().min(1), cameraId: z.string().min(1) }),
 });
 
 export const assignOperatorSchema = z.object({
-  body: z.object({
-    teamId: z.string().min(1),
-    operatorUserId: z.string().min(1).nullable(),
-  }),
-  params: z.object({
-    eventId: z.string().min(1),
-    cameraId: z.string().min(1),
-  }),
+  body: z.object({ teamId: z.string().min(1), operatorUserId: z.string().min(1).nullable() }),
+  params: z.object({ eventId: z.string().min(1), cameraId: z.string().min(1) }),
 });
 
 export const eventStatusSchema = z.object({
-  body: z.object({
-    teamId: z.string().min(1),
-  }),
-  params: z.object({
-    eventId: z.string().min(1),
-  }),
+  body: z.object({ teamId: z.string().min(1) }),
+  params: z.object({ eventId: z.string().min(1) }),
 });
 
 export const updateEventSchema = z.object({
   body: z.object({
+    teamId: z.string().min(1),
     title: z.string().trim().min(2).max(120).optional(),
     scheduledStart: z.string().datetime().optional(),
   }),
