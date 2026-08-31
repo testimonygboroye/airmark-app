@@ -9,7 +9,7 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", "all"],
     queryFn: async () => {
       const res = await apiClient.get<{ data: { notifications: NotificationRecord[]; unreadCount: number } }>(
         "/notifications"
@@ -34,13 +34,6 @@ export function NotificationBell() {
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.patch(`/notifications/${id}/read`);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-  });
-
-  const markAllReadMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.patch("/notifications/read-all");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
@@ -73,24 +66,16 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-navy border border-standby-slate/15 rounded-xl shadow-lg z-50">
+          <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 sm:w-80 max-h-96 overflow-y-auto bg-white dark:bg-navy border border-standby-slate/15 rounded-xl shadow-lg z-50">
             <div className="flex items-center justify-between px-4 py-3 border-b border-standby-slate/10">
               <p className="font-display text-sm font-semibold">Notifications</p>
-              {unreadCount > 0 && (
-                <button
-                  onClick={() => markAllReadMutation.mutate()}
-                  className="text-xs text-accent-teal font-medium"
-                >
-                  Mark all read
-                </button>
-              )}
             </div>
 
             {(!data || data.notifications.length === 0) && (
               <p className="text-sm text-standby-slate text-center py-8">No notifications yet.</p>
             )}
 
-            {data?.notifications.map((n) => (
+            {data?.notifications.slice(0, 10).map((n) => (
               <button
                 key={n._id}
                 onClick={() => !n.read && markReadMutation.mutate(n._id)}
@@ -98,14 +83,11 @@ export function NotificationBell() {
                   !n.read ? "bg-accent-teal/5" : ""
                 }`}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 min-w-0">
                   {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-accent-teal mt-1.5 shrink-0" />}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">{n.title}</p>
+                    <p className="text-sm font-medium truncate">{n.title}</p>
                     {n.body && <p className="text-xs text-standby-slate mt-0.5 truncate">{n.body}</p>}
-                    <p className="text-[10px] text-standby-slate/70 mt-1">
-                      {new Date(n.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
-                    </p>
                   </div>
                 </div>
               </button>

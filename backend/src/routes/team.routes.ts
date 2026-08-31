@@ -6,7 +6,12 @@ import inviteRoutes from "./invite.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
-import { createTeamSchema, updateMemberRoleSchema, removeMemberSchema } from "../validators/team.validator";
+import {
+  createTeamSchema,
+  updateMemberRoleSchema,
+  removeMemberSchema,
+  updateTeamSchema,
+} from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router();
@@ -18,6 +23,12 @@ router.get(
   "/:teamId/members",
   requirePermission(PERMISSIONS.TEAM_VIEW),
   teamController.getTeamMembers
+);
+router.patch(
+  "/:teamId",
+  validate(updateTeamSchema),
+  requirePermission(PERMISSIONS.TEAM_MANAGE),
+  teamController.updateTeam
 );
 router.patch(
   "/:teamId/members/:membershipId/role",

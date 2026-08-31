@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import { Team } from "../models/Team.model";
 import { Membership } from "../models/Membership.model";
-import { Role } from "../models/Role.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -115,4 +114,17 @@ export const removeMember = asyncHandler(async (req: Request, res: Response) => 
 
   await membership.deleteOne();
   res.json({ success: true, message: "Member removed from team" });
+});
+
+export const updateTeam = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const { name } = req.body;
+
+  const team = await Team.findById(teamId);
+  if (!team) throw ApiError.notFound("Team not found");
+
+  team.name = name;
+  await team.save();
+
+  res.json({ success: true, data: team });
 });

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 import { getSocket } from "@/lib/socketClient";
 import { useAuthStore } from "@/store/authStore";
 import { useTeamRole } from "@/hooks/useTeamRole";
-import { Spinner } from "@/components/ui/Button";
+import { Spinner, Button } from "@/components/ui/Button";
 import { DirectorLiveView } from "./DirectorLiveView";
 import { OperatorLiveView } from "./OperatorLiveView";
 import type {
@@ -17,9 +18,19 @@ import type {
   ObsConnectionRecord,
 } from "@/types";
 
+interface EventDetailResponse {
+  event: EventRecord;
+  cameras: CameraAssignmentRecord[];
+  segments: RunOfShowSegmentRecord[];
+  currentSegment: RunOfShowSegmentRecord | null;
+  nextSegment: RunOfShowSegmentRecord | null;
+  countdownTargetAt: string | null;
+}
+
 export function EventLivePage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { user } = useAuthStore();
+
   const [cameras, setCameras] = useState<CameraAssignmentRecord[]>([]);
   const [segments, setSegments] = useState<RunOfShowSegmentRecord[]>([]);
   const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
@@ -33,35 +44,39 @@ export function EventLivePage() {
     transitions: [],
     sceneItems: [],
   });
-  const [event, setEvent] = useState<EventRecord | null>(null);
 
-  const { isLoading } = useQuery({
-    queryKey: ["event", eventId],
+  const {
+    data: eventData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["eventLive", eventId],
     queryFn: async () => {
-      const res = await apiClient.get<{
-        data: {
-          event: EventRecord;
-          cameras: CameraAssignmentRecord[];
-          segments: RunOfShowSegmentRecord[];
-          currentSegment: RunOfShowSegmentRecord | null;
-          nextSegment: RunOfShowSegmentRecord | null;
-          countdownTargetAt: string | null;
-        };
-      }>(`/events/${eventId}`);
-      setEvent(res.data.data.event);
-      setCameras(res.data.data.cameras);
-      setSegments(res.data.data.segments);
-      setCurrentSegment(res.data.data.currentSegment);
-      setNextSegment(res.data.data.nextSegment);
-      setCountdownTargetAt(res.data.data.countdownTargetAt);
+      const res = await apiClient.get<{ data: EventDetailResponse }>(`/events/${eventId}`);
       return res.data.data;
     },
     enabled: !!eventId,
+    retry: 1,
   });
 
+  // Initialize local mutable state once the fetch succeeds. Using data
+  // directly (not a side-effect inside queryFn) means isLoading/isError
+  // from React Query stay authoritative — no more "stuck spinner forever
+  // on a failed fetch" bug.
+  useEffect(() => {
+    if (!eventData) return;
+    setCameras(eventData.cameras);
+    setSegments(eventData.segments);
+    setCurrentSegment(eventData.currentSegment);
+    setNextSegment(eventData.nextSegment);
+    setCountdownTargetAt(eventData.countdownTargetAt);
+  }, [eventData]);
+
+  const event = eventData?.event ?? null;
   const { hasPermission } = useTeamRole(event?.teamId);
   const isDirector = hasPermission("tally:control");
-  const canControlObs = hasPermission("obs:control");
 
   useEffect(() => {
     if (!isDirector || !eventId) return;
@@ -72,14 +87,15 @@ export function EventLivePage() {
   }, [isDirector, eventId]);
 
   useEffect(() => {
-    if (!canControlObs || !eventId || !event?.teamId) return;
+    if (!hasPermission("obs:control") || !eventId || !event?.teamId) return;
     apiClient
       .get<{ data: ObsConnectionRecord }>(`/events/${eventId}/obs/status`, {
         params: { teamId: event.teamId },
       })
       .then((res) => setObsConnection(res.data.data))
       .catch(() => {});
-  }, [canControlObs, eventId, event?.teamId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, event?.teamId]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -101,10 +117,7 @@ export function EventLivePage() {
         setNextSegment(payload.nextSegment);
       }
     }
-    function handleSegmentsUpdated(payload: {
-      eventId: string;
-      segments: RunOfShowSegmentRecord[];
-    }) {
+    function handleSegmentsUpdated(payload: { eventId: string; segments: RunOfShowSegmentRecord[] }) {
       if (payload.eventId === eventId) setSegments(payload.segments);
     }
     function handleCountdownUpdate(payload: { eventId: string; targetAt: string | null }) {
@@ -124,22 +137,11 @@ export function EventLivePage() {
       }
     }
     function handleObsStatus(payload: { eventId: string; status: "connected" | "disconnected" }) {
-      if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({ ...prev, status: payload.status }));
-      }
+      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, status: payload.status }));
     }
-    function handleObsFullUpdate(payload: {
-      eventId: string;
-      scenes: { sceneName: string; sceneIndex: number }[];
-      currentProgramScene: string;
-      transitions: string[];
-      currentTransition: string;
-      transitionDurationMs: number;
-      sceneItems: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
-    }) {
+    function handleObsFullUpdate(payload: any) {
       if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({
-          ...prev,
+        setObsConnection({
           status: "connected",
           scenes: payload.scenes,
           currentProgramScene: payload.currentProgramScene,
@@ -147,56 +149,27 @@ export function EventLivePage() {
           currentTransition: payload.currentTransition,
           transitionDurationMs: payload.transitionDurationMs,
           sceneItems: payload.sceneItems,
-        }));
+        });
       }
     }
     function handleObsSceneChanged(payload: { eventId: string; currentProgramScene: string }) {
-      if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
-      }
+      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
     }
-    function handleObsSceneItemsUpdate(payload: {
-      eventId: string;
-      sceneName: string;
-      items: { sceneItemId: number; sourceName: string; sceneItemEnabled: boolean }[];
-    }) {
-      if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({ ...prev, sceneItems: payload.items }));
-      }
+    function handleObsSceneItemsUpdate(payload: any) {
+      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, sceneItems: payload.items }));
     }
-    function handleObsSceneItemToggled(payload: {
-      eventId: string;
-      sceneItemId: number;
-      sceneItemEnabled: boolean;
-    }) {
+    function handleObsSceneItemToggled(payload: any) {
       if (payload.eventId === eventId) {
         setObsConnection((prev) => ({
           ...prev,
           sceneItems: (prev.sceneItems ?? []).map((item) =>
-            item.sceneItemId === payload.sceneItemId
-              ? { ...item, sceneItemEnabled: payload.sceneItemEnabled }
-              : item
+            item.sceneItemId === payload.sceneItemId ? { ...item, sceneItemEnabled: payload.sceneItemEnabled } : item
           ),
         }));
       }
     }
     function handleObsTransitionChanged(payload: { eventId: string; transitionName: string }) {
-      if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
-      }
-    }
-    function handleObsHealthUpdate(payload: {
-      eventId: string;
-      streaming: { active: boolean; outputSkippedFrames: number; outputTotalFrames: number };
-      recording: { active: boolean };
-    }) {
-      if (payload.eventId === eventId) {
-        setObsConnection((prev) => ({
-          ...prev,
-          streamStatus: payload.streaming,
-          recordStatus: payload.recording,
-        }));
-      }
+      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
     }
 
     socket.on("tally:update", handleTallyUpdate);
@@ -213,7 +186,6 @@ export function EventLivePage() {
     socket.on("obs:scene-items-update", handleObsSceneItemsUpdate);
     socket.on("obs:scene-item-toggled", handleObsSceneItemToggled);
     socket.on("obs:transition-changed", handleObsTransitionChanged);
-    socket.on("obs:health-update", handleObsHealthUpdate);
 
     return () => {
       socket.off("tally:update", handleTallyUpdate);
@@ -230,14 +202,24 @@ export function EventLivePage() {
       socket.off("obs:scene-items-update", handleObsSceneItemsUpdate);
       socket.off("obs:scene-item-toggled", handleObsSceneItemToggled);
       socket.off("obs:transition-changed", handleObsTransitionChanged);
-      socket.off("obs:health-update", handleObsHealthUpdate);
     };
   }, [eventId, user?.id]);
 
-  if (isLoading || !event) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size={28} />
+      </div>
+    );
+  }
+
+  if (isError || !event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-surface-light/70 text-sm">
+          {getErrorMessage(error, "Couldn't load this event.")}
+        </p>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }

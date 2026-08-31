@@ -21,6 +21,7 @@ export function LoginPage() {
 
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
+  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,6 +59,16 @@ export function LoginPage() {
     }
   }
 
+  async function handleRequestRecovery() {
+    setError(null);
+    try {
+      const res = await apiClient.post("/auth/2fa/recovery/request", { pendingToken });
+      setRecoveryMessage(res.data.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
+
   if (pendingToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-navy px-4">
@@ -69,7 +80,7 @@ export function LoginPage() {
           <form onSubmit={handle2FASubmit} className="flex flex-col gap-4">
             <input
               autoFocus
-              placeholder="6-digit code"
+              placeholder="6-digit code or backup code"
               value={totpCode}
               onChange={(e) => setTotpCode(e.target.value)}
               maxLength={20}
@@ -80,6 +91,16 @@ export function LoginPage() {
               Verify
             </Button>
           </form>
+
+          <div className="mt-4 text-center">
+            {recoveryMessage ? (
+              <p className="text-xs text-accent-teal">{recoveryMessage}</p>
+            ) : (
+              <button onClick={handleRequestRecovery} className="text-xs text-standby-slate underline">
+                Lost access to your authenticator app?
+              </button>
+            )}
+          </div>
         </Card>
       </div>
     );

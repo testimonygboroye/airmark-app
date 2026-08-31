@@ -110,3 +110,18 @@ export const disable2FASchema = z.object({
     password: z.string().min(1),
   }),
 });
+
+export const request2FARecoverySchema = z.object({
+  body: z.object({ pendingToken: z.string().min(1) }),
+});
+
+export const confirm2FARecoverySchema = z.object({
+  body: z.object({ token: z.string().min(1) }),
+});
+
+export const deleteAccountSchema = z.object({
+  body: z.object({
+    confirmationText: z.string().min(1),
+    password: z.string().min(1),
+  }),
+});

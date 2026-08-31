@@ -183,3 +183,18 @@ export const deleteEvent = asyncHandler(async (req: Request, res: Response) => {
 
   res.json({ success: true, message: "Event deleted" });
 });
+
+export const updateEvent = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { title, scheduledStart } = req.body;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+  if (event.status === "live") throw ApiError.badRequest("Cannot edit an event while it is live");
+
+  if (title !== undefined) event.title = title;
+  if (scheduledStart !== undefined) event.scheduledStart = new Date(scheduledStart);
+  await event.save();
+
+  res.json({ success: true, data: event });
+});

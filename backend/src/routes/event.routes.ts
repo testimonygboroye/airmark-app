@@ -16,6 +16,7 @@ import {
   setTallySchema,
   assignOperatorSchema,
   eventStatusSchema,
+  updateEventSchema,
 } from "../validators/event.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -32,6 +33,13 @@ router.post(
 
 router.get("/", eventController.getTeamEvents);
 router.get("/:eventId", eventController.getEventDetail);
+
+router.patch(
+  "/:eventId",
+  validate(updateEventSchema),
+  requirePermission(PERMISSIONS.EVENT_MANAGE),
+  eventController.updateEvent
+);
 
 router.delete(
   "/:eventId",

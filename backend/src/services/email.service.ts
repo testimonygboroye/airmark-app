@@ -128,3 +128,35 @@ export async function pingBrevoAccount(): Promise<{ email: string }> {
   const response = await brevoClient.get("/account");
   return { email: response.data.email };
 }
+
+export async function send2FARecoveryEmail(
+  to: string,
+  name: string,
+  recoveryUrl: string
+): Promise<void> {
+  await sendTransactionalEmail({
+    to,
+    toName: name,
+    subject: "Recover your Airmark account — disable two-factor authentication",
+    htmlContent: `
+      <div style="font-family: -apple-system, Arial, sans-serif; background:#0B0F14; padding:32px; color:#F7F8FA;">
+        <h1 style="color:#2DB6C4; font-size:20px;">Two-factor authentication recovery</h1>
+        <p style="font-size:15px; line-height:1.6;">
+          We received a request to disable two-factor authentication on your Airmark account, ${name},
+          because access to your authenticator app was lost.
+        </p>
+        <a href="${recoveryUrl}"
+           style="display:inline-block; margin-top:16px; padding:12px 24px;
+                  background:#E4293B; color:#ffffff; text-decoration:none;
+                  border-radius:6px; font-weight:600;">
+          Disable Two-Factor Authentication
+        </a>
+        <p style="font-size:12px; color:#3A4A5C; margin-top:24px;">
+          If you did not request this, ignore this email — your account remains protected.
+          This link expires in 30 minutes. After disabling, log in with just your password and
+          set up 2FA again with a fresh QR code.
+        </p>
+      </div>
+    `,
+  });
+}

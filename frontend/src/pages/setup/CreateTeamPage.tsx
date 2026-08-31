@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -18,8 +19,8 @@ export function CreateTeamPage() {
     try {
       await apiClient.post("/teams", { name });
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Couldn't create the team.");
+    } catch (err) {
+      setError(getErrorMessage(err, "Couldn't create the team."));
     } finally {
       setIsLoading(false);
     }
@@ -41,9 +42,14 @@ export function CreateTeamPage() {
             onChange={(e) => setName(e.target.value)}
           />
           {error && <p className="text-sm text-signal-red">{error}</p>}
-          <Button type="submit" isLoading={isLoading}>
-            Create team
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => navigate(-1)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isLoading} className="flex-1">
+              Create team
+            </Button>
+          </div>
         </form>
       </Card>
     </div>

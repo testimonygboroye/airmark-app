@@ -19,6 +19,7 @@ export function SetupLayout() {
   }, [collapsed]);
 
   async function handleLogout() {
+    if (!window.confirm("Log out of Airmark?")) return;
     try {
       await apiClient.post("/auth/logout");
     } finally {
@@ -31,6 +32,7 @@ export function SetupLayout() {
   const navItems = [
     { label: "Dashboard", to: "/dashboard" },
     { label: "New Team", to: "/teams/new" },
+    { label: "Invites", to: "/invites" },
     { label: "Profile", to: "/profile" },
   ];
 

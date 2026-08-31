@@ -19,6 +19,8 @@ export interface IUser extends Document {
   twoFactorSecret?: string;
   twoFactorEnabled: boolean;
   twoFactorBackupCodeHashes: string[];
+  twoFactorRecoveryTokenHash?: string;
+  twoFactorRecoveryExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -48,6 +50,8 @@ const userSchema = new Schema<IUser>(
     twoFactorSecret: { type: String, select: false },
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorBackupCodeHashes: { type: [String], default: [], select: false },
+    twoFactorRecoveryTokenHash: { type: String, select: false },
+    twoFactorRecoveryExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );

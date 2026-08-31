@@ -1,22 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useTeamRole } from "@/hooks/useTeamRole";
-import { useNavigate } from "react-router";
 import type { EventRecord, CameraAssignmentRecord, TeamMemberEntry } from "@/types";
 
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.delete(`/events/${eventId}`);
-    },
-    onSuccess: () => navigate(`/teams/${data?.event.teamId}/events`),
-  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -54,6 +47,13 @@ export function EventDetailPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.delete(`/events/${eventId}`);
+    },
+    onSuccess: () => navigate(`/teams/${data?.event.teamId}/events`),
+  });
+
   if (isLoading || !data) {
     return <div className="max-w-2xl mx-auto px-4 py-8 text-sm text-standby-slate">Loading…</div>;
   }
@@ -61,12 +61,12 @@ export function EventDetailPage() {
   const { event, cameras } = data;
   const canManage = hasPermission("event:manage");
   const canGoLive = hasPermission("tally:control");
+  const canViewLive = hasPermission("tally:view");
   const canManageRos = hasPermission("ros:manage");
   const canViewHighlights = hasPermission("highlight:view");
   const canViewEquipment = hasPermission("equipment:manage");
   const canCompleteChecklist = hasPermission("checklist:complete");
   const canViewReadiness = hasPermission("checklist:manage");
-  const canDelete = hasPermission("event:manage");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -84,58 +84,51 @@ export function EventDetailPage() {
           </span>
         </div>
         <div className="flex flex-col gap-2 items-end">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            {canManage && (
+              <Link to={`/events/${event._id}/edit`}>
+                <Button variant="ghost">Edit</Button>
+              </Link>
+            )}
             {canManageRos && (
               <Link to={`/events/${event._id}/run-of-show`}>
                 <Button variant="secondary">Run of show</Button>
               </Link>
             )}
-            {canGoLive && (
+            {(canGoLive || canViewLive) && (
               <Link to={`/events/${event._id}/live`}>
-                <Button>Go Live</Button>
+                <Button>{canGoLive ? "Go Live" : "View Live"}</Button>
               </Link>
             )}
           </div>
           <div className="flex flex-wrap gap-3 justify-end">
             {canCompleteChecklist && (
-              <Link
-                to={`/events/${event._id}/checklist`}
-                className="text-xs text-accent-teal font-medium"
-              >
+              <Link to={`/events/${event._id}/checklist`} className="text-xs text-accent-teal font-medium">
                 My checklist
               </Link>
             )}
             {canViewReadiness && (
-              <Link
-                to={`/events/${event._id}/readiness`}
-                className="text-xs text-accent-teal font-medium"
-              >
+              <Link to={`/events/${event._id}/readiness`} className="text-xs text-accent-teal font-medium">
                 Crew readiness
               </Link>
             )}
             {canViewHighlights && (
-              <Link
-                to={`/events/${event._id}/highlights`}
-                className="text-xs text-accent-teal font-medium"
-              >
+              <Link to={`/events/${event._id}/highlights`} className="text-xs text-accent-teal font-medium">
                 View highlights
               </Link>
             )}
-            {canDelete && (
+            {canViewEquipment && (
+              <Link to={`/events/${event._id}/equipment`} className="text-xs text-accent-teal font-medium">
+                Equipment status
+              </Link>
+            )}
+            {canManage && event.status !== "live" && (
               <button
                 onClick={() => confirm("Delete this event? This cannot be undone.") && deleteMutation.mutate()}
                 className="text-xs text-signal-red font-medium"
               >
                 Delete event
               </button>
-            )}
-            {canViewEquipment && (
-              <Link
-                to={`/events/${event._id}/equipment`}
-                className="text-xs text-accent-teal font-medium"
-              >
-                Equipment status
-              </Link>
             )}
           </div>
         </div>

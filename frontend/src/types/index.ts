@@ -269,3 +269,16 @@ export interface TeamInviteRecord {
   expiresAt: string;
   createdAt: string;
 }
+
+export interface EditableEvent {
+  title: string;
+  scheduledStart: string;
+}
+
+export interface MyInviteRecord {
+  _id: string;
+  teamId: { _id: string; name: string };
+  roleId: { _id: string; name: string };
+  invitedBy: { _id: string; firstName: string; lastName: string };
+  expiresAt: string;
+}

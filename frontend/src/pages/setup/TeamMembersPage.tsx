@@ -66,6 +66,18 @@ export function TeamMembersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] }),
   });
 
+  const [editingName, setEditingName] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const renameMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.patch(`/teams/${teamId}`, { name: teamName });
+    },
+    onSuccess: () => {
+      setEditingName(false);
+      queryClient.invalidateQueries({ queryKey: ["myTeams"] });
+    },
+  });
+
   const removeMutation = useMutation({
     mutationFn: async (membershipId: string) => {
       await apiClient.delete(`/teams/${teamId}/members/${membershipId}`);

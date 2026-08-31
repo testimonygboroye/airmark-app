@@ -362,7 +362,6 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
 export const setup2FA = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user!.id);
   if (!user) throw ApiError.notFound("User not found");
-  if (!user.isSuperAdmin) throw ApiError.forbidden("Two-factor authentication is currently available for Founder/Super Admin accounts only");
 
   const secret = await generateSecret();
   user.twoFactorSecret = secret;
@@ -407,4 +406,108 @@ export const disable2FA = asyncHandler(async (req: Request, res: Response) => {
   await user.save();
 
   res.json({ success: true, message: "Two-factor authentication disabled" });
+});
+
+/**
+ * Uses the still-valid pendingToken from the login attempt (which already
+ * proves the person knows the account password) rather than asking them
+ * to re-enter it — they're stuck specifically because they can't produce
+ * a TOTP code, not because they've forgotten their password.
+ */
+export const request2FARecovery = asyncHandler(async (req: Request, res: Response) => {
+  const { pendingToken } = req.body;
+
+  let payload;
+  try {
+    payload = verifyPending2FAToken(pendingToken);
+  } catch {
+    throw ApiError.unauthorized("This login attempt has expired. Please log in again.");
+  }
+
+  const user = await User.findById(payload.userId);
+  if (!user) throw ApiError.notFound("Account not found");
+
+  const { raw, hash } = generateSecureToken();
+  user.twoFactorRecoveryTokenHash = hash;
+  user.twoFactorRecoveryExpires = new Date(Date.now() + 30 * 60 * 1000);
+  await user.save();
+
+  const { send2FARecoveryEmail } = await import("../services/email.service");
+  const recoveryUrl = `${env.CLIENT_URL}/2fa-recovery?token=${raw}`;
+  await send2FARecoveryEmail(user.email, user.firstName, recoveryUrl);
+
+  res.json({ success: true, message: `Recovery instructions sent to ${user.email}.` });
+});
+
+export const confirm2FARecovery = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.body;
+  const tokenHash = hashRefreshToken(token);
+
+  const user = await User.findOne({
+    twoFactorRecoveryTokenHash: tokenHash,
+    twoFactorRecoveryExpires: { $gt: new Date() },
+  }).select("+twoFactorRecoveryTokenHash +twoFactorRecoveryExpires");
+
+  if (!user) throw ApiError.badRequest("This recovery link is invalid or has expired");
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  user.twoFactorBackupCodeHashes = [];
+  user.twoFactorRecoveryTokenHash = undefined;
+  user.twoFactorRecoveryExpires = undefined;
+  await user.save();
+
+  res.json({ success: true, message: "Two-factor authentication disabled. You can now log in with just your password." });
+});
+
+export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
+  const { confirmationText, password } = req.body;
+
+  if (confirmationText !== "DELETE MY ACCOUNT") {
+    throw ApiError.badRequest('You must type exactly "DELETE MY ACCOUNT" to confirm');
+  }
+
+  const user = await User.findById(req.user!.id).select("+passwordHash");
+  if (!user) throw ApiError.notFound("User not found");
+
+  const valid = await user.comparePassword(password);
+  if (!valid) throw ApiError.unauthorized("Password is incorrect");
+
+  const { Membership } = await import("../models/Membership.model");
+  const { Role } = await import("../models/Role.model");
+  const { Team } = await import("../models/Team.model");
+
+  const memberships = await Membership.find({ userId: user._id, status: "active" }).populate("roleId teamId");
+
+  const ownedTeamsWithOthers: string[] = [];
+  for (const m of memberships) {
+    const role = m.roleId as any;
+    if (role?.name === "Team Owner") {
+      const otherMembers = await Membership.countDocuments({ teamId: m.teamId, status: "active", userId: { $ne: user._id } });
+      if (otherMembers > 0) {
+        ownedTeamsWithOthers.push((m.teamId as any).name);
+      }
+    }
+  }
+
+  if (ownedTeamsWithOthers.length > 0) {
+    throw ApiError.badRequest(
+      `Remove all other members from these teams first (or delete the teams): ${ownedTeamsWithOthers.join(", ")}`
+    );
+  }
+
+  // Safe to proceed — delete solo-owned teams and this account entirely.
+  for (const m of memberships) {
+    const role = m.roleId as any;
+    if (role?.name === "Team Owner") {
+      await Team.findByIdAndDelete(m.teamId);
+    }
+  }
+
+  await Membership.deleteMany({ userId: user._id });
+  await RefreshToken.deleteMany({ userId: user._id });
+  await User.findByIdAndDelete(user._id);
+
+  clearRefreshCookie(res);
+  res.json({ success: true, message: "Account permanently deleted" });
 });

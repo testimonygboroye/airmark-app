@@ -14,6 +14,9 @@ import {
   changePasswordSchema,
   confirm2FASchema,
   disable2FASchema,
+  request2FARecoverySchema,
+  confirm2FARecoverySchema,
+  deleteAccountSchema,
 } from "../validators/auth.validator";
 
 const router = Router();
@@ -22,12 +25,15 @@ router.post("/register", authRateLimiter, validate(registerSchema), authControll
 router.post("/verify-email", authRateLimiter, validate(verifyEmailSchema), authController.verifyEmail);
 router.post("/login", authRateLimiter, validate(loginSchema), authController.login);
 router.post("/2fa/login-verify", authRateLimiter, validate(verify2FALoginSchema), authController.verify2FALogin);
+router.post("/2fa/recovery/request", authRateLimiter, validate(request2FARecoverySchema), authController.request2FARecovery);
+router.post("/2fa/recovery/confirm", authRateLimiter, validate(confirm2FARecoverySchema), authController.confirm2FARecovery);
 router.post("/refresh", authController.refresh);
 router.post("/logout", authController.logout);
 router.post("/forgot-password", authRateLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 router.post("/reset-password", authRateLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.get("/me", requireAuth, authController.getMe);
 router.patch("/me", requireAuth, validate(updateProfileSchema), authController.updateProfile);
+router.delete("/me", requireAuth, validate(deleteAccountSchema), authController.deleteAccount);
 router.post("/change-password", requireAuth, validate(changePasswordSchema), authController.changePassword);
 router.post("/2fa/setup", requireAuth, authController.setup2FA);
 router.post("/2fa/confirm", requireAuth, validate(confirm2FASchema), authController.confirmSetup2FA);

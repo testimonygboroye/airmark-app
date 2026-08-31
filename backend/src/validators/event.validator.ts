@@ -38,3 +38,11 @@ export const eventStatusSchema = z.object({
     eventId: z.string().min(1),
   }),
 });
+
+export const updateEventSchema = z.object({
+  body: z.object({
+    title: z.string().trim().min(2).max(120).optional(),
+    scheduledStart: z.string().datetime().optional(),
+  }),
+  params: z.object({ eventId: z.string().min(1) }),
+});

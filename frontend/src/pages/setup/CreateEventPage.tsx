@@ -66,9 +66,14 @@ export function CreateEventPage() {
             onChange={(e) => setCameraCount(parseInt(e.target.value, 10) || 1)}
           />
           {error && <p className="text-sm text-signal-red">{error}</p>}
-          <Button type="submit" isLoading={isLoading}>
-            Create event
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => navigate(-1)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isLoading} className="flex-1">
+              Create event
+            </Button>
+          </div>
         </form>
       </Card>
     </div>

@@ -9,10 +9,12 @@ import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { VerifyEmailPage } from "@/pages/auth/VerifyEmailPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { TwoFactorRecoveryPage } from "@/pages/auth/TwoFactorRecoveryPage";
 import { DashboardPage } from "@/pages/setup/DashboardPage";
 import { CreateTeamPage } from "@/pages/setup/CreateTeamPage";
 import { EventsListPage } from "@/pages/setup/EventsListPage";
 import { CreateEventPage } from "@/pages/setup/CreateEventPage";
+import { EditEventPage } from "@/pages/setup/EditEventPage";
 import { EventDetailPage } from "@/pages/setup/EventDetailPage";
 import { RunOfShowEditorPage } from "@/pages/setup/RunOfShowEditorPage";
 import { HighlightsPage } from "@/pages/setup/HighlightsPage";
@@ -27,6 +29,7 @@ import { EditorWorkspacePage } from "@/pages/setup/EditorWorkspacePage";
 import { TeamMembersPage } from "@/pages/setup/TeamMembersPage";
 import { NotificationsPage } from "@/pages/setup/NotificationsPage";
 import { ProfilePage } from "@/pages/setup/ProfilePage";
+import { MyInvitesPage } from "@/pages/setup/MyInvitesPage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -42,6 +45,7 @@ export function AppRouter() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/2fa-recovery" element={<TwoFactorRecoveryPage />} />
         </Route>
 
         <Route
@@ -58,17 +62,19 @@ export function AppRouter() {
           <Route path="/teams/:teamId/checklist-templates" element={<ChecklistTemplateEditorPage />} />
           <Route path="/teams/:teamId/schedule" element={<SchedulePage />} />
           <Route path="/teams/:teamId/roles" element={<RolesManagementPage />} />
-          <Route path="/system-console" element={<AdminDashboardPage />} />
           <Route path="/teams/:teamId/editor" element={<EditorWorkspacePage />} />
           <Route path="/teams/:teamId/members" element={<TeamMembersPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/events/:eventId/edit" element={<EditEventPage />} />
           <Route path="/events/:eventId/run-of-show" element={<RunOfShowEditorPage />} />
           <Route path="/events/:eventId/highlights" element={<HighlightsPage />} />
           <Route path="/events/:eventId/equipment" element={<EquipmentStatusPage />} />
           <Route path="/events/:eventId/checklist" element={<EventChecklistPage />} />
           <Route path="/events/:eventId/readiness" element={<EventReadinessPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/invites" element={<MyInvitesPage />} />
+          <Route path="/system-console" element={<AdminDashboardPage />} />
         </Route>
 
         <Route
