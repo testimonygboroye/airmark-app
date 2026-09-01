@@ -40,3 +40,16 @@ export const markAllAsRead = asyncHandler(async (req: Request, res: Response) =>
   await Notification.updateMany({ userId: req.user!.id, read: false }, { read: true });
   res.json({ success: true, message: "All notifications marked as read" });
 });
+
+export const getNotification = asyncHandler(async (req: Request, res: Response) => {
+  const notificationId = req.params.notificationId as string;
+  const notification = await Notification.findOne({ _id: notificationId, userId: req.user!.id });
+  if (!notification) throw ApiError.notFound("Notification not found");
+
+  if (!notification.read) {
+    notification.read = true;
+    await notification.save();
+  }
+
+  res.json({ success: true, data: notification });
+});

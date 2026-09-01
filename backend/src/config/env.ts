@@ -37,13 +37,9 @@ export const env = {
   SUPER_ADMIN_NAME: process.env.SUPER_ADMIN_NAME || "Founder",
 
   OBS_BRIDGE_SECRET: required("OBS_BRIDGE_SECRET"),
-
-  /**
-   * Master kill switch for 2FA enforcement at login. Set to the literal
-   * string "false" on Render to bypass the 2FA code prompt entirely for
-   * every account, with zero code changes and zero script runs — just
-   * toggle this value and save. Any other value (or leaving it unset)
-   * keeps 2FA enforced normally for accounts that have it enabled.
-   */
   TWO_FACTOR_ENFORCEMENT_ENABLED: process.env.TWO_FACTOR_ENFORCEMENT_ENABLED !== "false",
+
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT || "mailto:testimonygboroye.dev@gmail.com",
+  VAPID_PUBLIC_KEY: required("VAPID_PUBLIC_KEY"),
+  VAPID_PRIVATE_KEY: required("VAPID_PRIVATE_KEY"),
 };

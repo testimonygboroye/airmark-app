@@ -12,6 +12,7 @@ import {
   removeMemberSchema,
   updateTeamSchema,
   transferOwnershipSchema,
+  deleteTeamSchema,
 } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -25,6 +26,13 @@ router.get(
   requirePermission(PERMISSIONS.TEAM_VIEW),
   teamController.getTeamMembers
 );
+router.delete(
+  "/:teamId",
+  validate(deleteTeamSchema),
+  requirePermission(PERMISSIONS.TEAM_MANAGE),
+  teamController.deleteTeam
+);
+
 router.patch(
   "/:teamId",
   validate(updateTeamSchema),
@@ -37,6 +45,13 @@ router.post(
   requirePermission(PERMISSIONS.TEAM_MANAGE),
   teamController.transferOwnership
 );
+router.delete(
+  "/:teamId",
+  validate(deleteTeamSchema),
+  requirePermission(PERMISSIONS.TEAM_MANAGE),
+  teamController.deleteTeam
+);
+
 router.patch(
   "/:teamId/members/:membershipId/role",
   validate(updateMemberRoleSchema),

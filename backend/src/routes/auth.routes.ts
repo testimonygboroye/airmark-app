@@ -14,6 +14,7 @@ import {
   changePasswordSchema,
   confirm2FASchema,
   disable2FASchema,
+  resendVerificationSchema,
   request2FARecoverySchema,
   confirm2FARecoverySchema,
   deleteAccountSchema,
@@ -23,6 +24,7 @@ const router = Router();
 
 router.post("/register", authRateLimiter, validate(registerSchema), authController.register);
 router.post("/verify-email", authRateLimiter, validate(verifyEmailSchema), authController.verifyEmail);
+router.post("/resend-verification", authRateLimiter, validate(resendVerificationSchema), authController.resendVerification);
 router.post("/login", authRateLimiter, validate(loginSchema), authController.login);
 router.post("/2fa/login-verify", authRateLimiter, validate(verify2FALoginSchema), authController.verify2FALogin);
 router.post("/2fa/recovery/request", authRateLimiter, validate(request2FARecoverySchema), authController.request2FARecovery);

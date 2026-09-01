@@ -32,3 +32,13 @@ export const updateEventSchema = z.object({
   }),
   params: z.object({ eventId: z.string().min(1) }),
 });
+
+export const cameraActionSchema = z.object({
+  body: z.object({ teamId: z.string().min(1) }),
+  params: z.object({ eventId: z.string().min(1) }),
+});
+
+export const removeCameraSchema = z.object({
+  body: z.object({ teamId: z.string().min(1) }),
+  params: z.object({ eventId: z.string().min(1), cameraId: z.string().min(1) }),
+});

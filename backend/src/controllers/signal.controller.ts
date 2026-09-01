@@ -7,6 +7,7 @@ import { ApiError } from "../utils/ApiError";
 import { emitToTeam } from "../sockets";
 import { createNotification } from "../services/notification.service";
 import { PERMISSIONS, WILDCARD_PERMISSION } from "../utils/permissions";
+import { User } from "../models/User.model";
 
 const SIGNAL_LABELS: Record<string, string> = {
   battery_low: "Battery low",
@@ -32,6 +33,9 @@ export const sendSignal = asyncHandler(async (req: Request, res: Response) => {
 
   emitToTeam(teamId, "signal:new", { eventId, signal: populated });
 
+  const sender = await User.findById(fromUserId);
+  const senderName = sender ? `${sender.firstName} ${sender.lastName}` : "A crew member";
+
   const memberships = await Membership.find({ teamId, status: "active" }).populate("roleId");
   const managers = memberships.filter((m) => {
     const role = m.roleId as any;
@@ -46,7 +50,7 @@ export const sendSignal = asyncHandler(async (req: Request, res: Response) => {
         eventId,
         type: "signal",
         title: SIGNAL_LABELS[type] || "Crew signal",
-        body: customText,
+        body: `From ${senderName}${customText ? ` — ${customText}` : ""}`,
       })
     )
   );

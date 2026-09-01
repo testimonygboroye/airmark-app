@@ -32,3 +32,8 @@ export const transferOwnershipSchema = z.object({
   body: z.object({ newOwnerMembershipId: z.string().min(1) }),
   params: z.object({ teamId: z.string().min(1) }),
 });
+
+export const deleteTeamSchema = z.object({
+  body: z.object({ confirmationText: z.string().min(1) }),
+  params: z.object({ teamId: z.string().min(1) }),
+});

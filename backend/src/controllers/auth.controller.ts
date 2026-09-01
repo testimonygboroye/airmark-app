@@ -510,3 +510,25 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   clearRefreshCookie(res);
   res.json({ success: true, message: "Account permanently deleted" });
 });
+
+export const resendVerification = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  // Same non-committal response whether or not the account exists, to
+  // avoid leaking which emails are registered.
+  if (user && !user.isEmailVerified) {
+    const { raw: verifyToken, hash: verifyTokenHash } = generateSecureToken();
+    user.emailVerificationTokenHash = verifyTokenHash;
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    const verifyUrl = `${env.CLIENT_URL}/verify-email?token=${verifyToken}`;
+    await sendVerificationEmail(user.email, user.firstName, verifyUrl);
+  }
+
+  res.json({
+    success: true,
+    message: "If that email is registered and not yet verified, a new link has been sent.",
+  });
+});

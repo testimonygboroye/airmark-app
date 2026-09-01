@@ -17,6 +17,8 @@ import {
   assignOperatorSchema,
   eventStatusSchema,
   updateEventSchema,
+  cameraActionSchema,
+  removeCameraSchema,
 } from "../validators/event.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -24,56 +26,20 @@ const router = Router();
 
 router.use(requireAuth);
 
-router.post(
-  "/",
-  validate(createEventSchema),
-  requirePermission(PERMISSIONS.EVENT_CREATE),
-  eventController.createEvent
-);
-
+router.post("/", validate(createEventSchema), requirePermission(PERMISSIONS.EVENT_CREATE), eventController.createEvent);
 router.get("/", eventController.getTeamEvents);
 router.get("/:eventId", eventController.getEventDetail);
+router.patch("/:eventId", validate(updateEventSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.updateEvent);
+router.delete("/:eventId", requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.deleteEvent);
 
-router.patch(
-  "/:eventId",
-  validate(updateEventSchema),
-  requirePermission(PERMISSIONS.EVENT_MANAGE),
-  eventController.updateEvent
-);
+router.post("/:eventId/cameras", validate(cameraActionSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.addCamera);
+router.delete("/:eventId/cameras/:cameraId", validate(removeCameraSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.removeCamera);
+router.post("/:eventId/cameras/:cameraId/live", validate(setTallySchema), requirePermission(PERMISSIONS.TALLY_CONTROL), eventController.setLiveCamera);
+router.patch("/:eventId/cameras/:cameraId/assign", validate(assignOperatorSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.assignOperator);
 
-router.delete(
-  "/:eventId",
-  requirePermission(PERMISSIONS.EVENT_MANAGE),
-  eventController.deleteEvent
-);
-
-router.post(
-  "/:eventId/cameras/:cameraId/live",
-  validate(setTallySchema),
-  requirePermission(PERMISSIONS.TALLY_CONTROL),
-  eventController.setLiveCamera
-);
-
-router.patch(
-  "/:eventId/cameras/:cameraId/assign",
-  validate(assignOperatorSchema),
-  requirePermission(PERMISSIONS.EVENT_MANAGE),
-  eventController.assignOperator
-);
-
-router.post(
-  "/:eventId/start",
-  validate(eventStatusSchema),
-  requirePermission(PERMISSIONS.EVENT_MANAGE),
-  eventController.startEvent
-);
-
-router.post(
-  "/:eventId/end",
-  validate(eventStatusSchema),
-  requirePermission(PERMISSIONS.EVENT_MANAGE),
-  eventController.endEvent
-);
+router.post("/:eventId/start", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.startEvent);
+router.post("/:eventId/end", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.endEvent);
+router.post("/:eventId/reopen", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.reopenEvent);
 
 router.use("/:eventId/segments", runOfShowRoutes);
 router.use("/:eventId/countdown", countdownRoutes);

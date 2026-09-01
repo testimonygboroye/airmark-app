@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PushSubscription } from "../models/PushSubscription.model";
+import { env } from "../config/env";
 import { asyncHandler } from "../utils/asyncHandler";
 
 export const subscribe = asyncHandler(async (req: Request, res: Response) => {
@@ -18,7 +19,6 @@ export const unsubscribe = asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-export const getPublicKey = asyncHandler(async (req: Request, res: Response) => {
-  const { env } = await import("../config/env");
+export const getPublicKey = asyncHandler(async (_req: Request, res: Response) => {
   res.json({ success: true, data: { publicKey: env.VAPID_PUBLIC_KEY } });
 });

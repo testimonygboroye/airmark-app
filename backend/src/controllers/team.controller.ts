@@ -159,3 +159,37 @@ export const transferOwnership = asyncHandler(async (req: Request, res: Response
 
   res.json({ success: true, message: "Ownership transferred. You are now a Director on this team." });
 });
+
+export const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const { confirmationText } = req.body;
+
+  const team = await Team.findById(teamId);
+  if (!team) throw ApiError.notFound("Team not found");
+
+  if (confirmationText !== `DELETE ${team.name}`) {
+    throw ApiError.badRequest(`You must type exactly "DELETE ${team.name}" to confirm`);
+  }
+
+  const otherMembers = await Membership.countDocuments({ teamId, status: "active", userId: { $ne: req.user!.id } });
+  if (otherMembers > 0) {
+    throw ApiError.badRequest("Remove all other members from this team before deleting it");
+  }
+
+  const { Event } = await import("../models/Event.model");
+  const { CameraAssignment } = await import("../models/CameraAssignment.model");
+  const { Role: RoleModel } = await import("../models/Role.model");
+
+  const events = await Event.find({ teamId }).select("_id");
+  const eventIds = events.map((e) => e._id);
+
+  await Promise.all([
+    CameraAssignment.deleteMany({ teamId }),
+    Event.deleteMany({ teamId }),
+    RoleModel.deleteMany({ teamId }),
+    Membership.deleteMany({ teamId }),
+    Team.findByIdAndDelete(teamId),
+  ]);
+
+  res.json({ success: true, message: "Team deleted permanently" });
+});

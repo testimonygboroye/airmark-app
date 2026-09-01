@@ -198,3 +198,77 @@ export const updateEvent = asyncHandler(async (req: Request, res: Response) => {
 
   res.json({ success: true, data: event });
 });
+
+/**
+ * Reverts an event back to "live" — the safety valve for exactly what
+ * happened here: End Event was tapped (possibly more than once, before
+ * the status-sync bug was fixed) with no visible confirmation, leaving
+ * the event stuck in "ended" with no way back. Always available; this is
+ * a correction tool, not a normal broadcast action.
+ */
+export const reopenEvent = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { teamId } = req.body;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+  if (event.status !== "ended") throw ApiError.badRequest("This event is not currently ended");
+
+  event.status = "live";
+  event.endedAt = undefined;
+  await event.save();
+
+  emitToTeam(teamId, "event:status-update", { eventId, status: event.status });
+
+  res.json({ success: true, data: { status: event.status } });
+});
+
+export const addCamera = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const { teamId } = req.body;
+
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+
+  const highestNumber = await CameraAssignment.findOne({ eventId }).sort({ cameraNumber: -1 });
+  const nextNumber = (highestNumber?.cameraNumber ?? 0) + 1;
+
+  const camera = await CameraAssignment.create({
+    eventId,
+    teamId,
+    cameraNumber: nextNumber,
+    label: `Camera ${nextNumber}`,
+    isLive: false,
+  });
+
+  const cameras = await CameraAssignment.find({ eventId })
+    .sort({ cameraNumber: 1 })
+    .populate("operatorUserId", "firstName lastName email");
+
+  emitToTeam(teamId, "cameras:update", { eventId, cameras });
+  res.status(201).json({ success: true, data: camera });
+});
+
+export const removeCamera = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const cameraId = req.params.cameraId as string;
+  const { teamId } = req.body;
+
+  const camera = await CameraAssignment.findOne({ _id: cameraId, eventId });
+  if (!camera) throw ApiError.notFound("Camera not found");
+
+  if (camera.isLive) {
+    throw ApiError.badRequest(
+      "This camera is currently live. Switch the broadcast to a different camera before removing it."
+    );
+  }
+
+  await camera.deleteOne();
+
+  const cameras = await CameraAssignment.find({ eventId })
+    .sort({ cameraNumber: 1 })
+    .populate("operatorUserId", "firstName lastName email");
+
+  emitToTeam(teamId, "cameras:update", { eventId, cameras });
+  res.json({ success: true, data: { cameras } });
+});
