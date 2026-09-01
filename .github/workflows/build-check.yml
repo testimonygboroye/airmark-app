@@ -19,6 +19,8 @@ jobs:
           node-version: 24
       - run: npm install --include=dev
       - run: npm run build
+      - name: Type-check test files (does not run tests against production)
+        run: npx tsc -p tsconfig.jest.json --noEmit
 
   frontend:
     runs-on: ubuntu-latest
