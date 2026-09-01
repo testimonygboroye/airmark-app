@@ -180,8 +180,6 @@ export const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
   const { CameraAssignment } = await import("../models/CameraAssignment.model");
   const { Role: RoleModel } = await import("../models/Role.model");
 
-  const events = await Event.find({ teamId }).select("_id");
-  const eventIds = events.map((e) => e._id);
 
   await Promise.all([
     CameraAssignment.deleteMany({ teamId }),
