@@ -18,6 +18,9 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
@@ -26,6 +29,7 @@ export function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setShowResend(false);
     setIsLoading(true);
     try {
       const { data } = await apiClient.post("/auth/login", form);
@@ -36,10 +40,26 @@ export function LoginPage() {
         connectSocket(data.data.accessToken);
         navigate("/dashboard");
       }
-    } catch (err) {
-      setError(getErrorMessage(err, "Invalid email or password."));
+    } catch (err: any) {
+      const msg = getErrorMessage(err, "Invalid email or password.");
+      setError(msg);
+      if (err?.response?.status === 403 && msg.toLowerCase().includes("verify")) {
+        setShowResend(true);
+      }
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setResendLoading(true);
+    try {
+      const res = await apiClient.post("/auth/resend-verification", { email: form.email });
+      setResendMessage(res.data.message);
+    } catch {
+      setResendMessage("Couldn't send a new link right now. Please try again shortly.");
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -120,21 +140,22 @@ export function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Email"
-            type="email"
-            required
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
-          <PasswordInput
-            label="Password"
-            required
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
+          <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <PasswordInput label="Password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
 
           {error && <p className="text-sm text-signal-red">{error}</p>}
+
+          {showResend && (
+            <div className="text-xs">
+              {resendMessage ? (
+                <p className="text-accent-teal">{resendMessage}</p>
+              ) : (
+                <button type="button" onClick={handleResend} disabled={resendLoading} className="text-accent-teal font-medium underline">
+                  {resendLoading ? "Sending…" : "Resend verification email"}
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end -mt-2">
             <Link to="/forgot-password" className="text-xs text-accent-teal font-medium">

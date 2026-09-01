@@ -11,13 +11,28 @@ export function CreateEventPage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [scheduledStart, setScheduledStart] = useState("");
-  const [cameraCount, setCameraCount] = useState(2);
+  const [cameraCountInput, setCameraCountInput] = useState("2");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  function validateCameraCount(): number | null {
+    if (cameraCountInput.trim() === "") return null;
+    if (!/^\d+$/.test(cameraCountInput.trim())) return null;
+    const n = parseInt(cameraCountInput, 10);
+    if (n < 1 || n > 20) return null;
+    return n;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const cameraCount = validateCameraCount();
+    if (cameraCount === null) {
+      setError("Number of cameras must be a whole number between 1 and 20.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await apiClient.post("/events", {
@@ -39,31 +54,18 @@ export function CreateEventPage() {
       <Card>
         <h1 className="font-display text-xl font-semibold mb-1">Schedule an event</h1>
         <p className="text-sm text-standby-slate mb-6">
-          Camera assignments are created automatically based on how many cameras you set.
+          Camera assignments are created automatically based on how many cameras you set. You can add or remove cameras later.
         </p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Event title"
-            required
-            placeholder="e.g. Sunday Morning Service"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <Input
-            label="Start time"
-            type="datetime-local"
-            required
-            value={scheduledStart}
-            onChange={(e) => setScheduledStart(e.target.value)}
-          />
+          <Input label="Event title" required placeholder="e.g. Sunday Morning Service" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input label="Start time" type="datetime-local" required value={scheduledStart} onChange={(e) => setScheduledStart(e.target.value)} />
           <Input
             label="Number of cameras"
-            type="number"
             required
-            min={1}
-            max={20}
-            value={cameraCount}
-            onChange={(e) => setCameraCount(parseInt(e.target.value, 10) || 1)}
+            inputMode="numeric"
+            placeholder="e.g. 3"
+            value={cameraCountInput}
+            onChange={(e) => setCameraCountInput(e.target.value.replace(/[^\d]/g, ""))}
           />
           {error && <p className="text-sm text-signal-red">{error}</p>}
           <div className="flex gap-2">

@@ -3,6 +3,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { SetupLayout } from "@/layouts/SetupLayout";
 import { LiveLayout } from "@/layouts/LiveLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { RouteTracker } from "@/components/ui/RouteTracker";
 
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
@@ -28,6 +29,7 @@ import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { EditorWorkspacePage } from "@/pages/setup/EditorWorkspacePage";
 import { TeamMembersPage } from "@/pages/setup/TeamMembersPage";
 import { NotificationsPage } from "@/pages/setup/NotificationsPage";
+import { NotificationDetailPage } from "@/pages/setup/NotificationDetailPage";
 import { ProfilePage } from "@/pages/setup/ProfilePage";
 import { MyInvitesPage } from "@/pages/setup/MyInvitesPage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
@@ -36,6 +38,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <RouteTracker />
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -72,6 +75,7 @@ export function AppRouter() {
           <Route path="/events/:eventId/checklist" element={<EventChecklistPage />} />
           <Route path="/events/:eventId/readiness" element={<EventReadinessPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/invites" element={<MyInvitesPage />} />
           <Route path="/system-console" element={<AdminDashboardPage />} />

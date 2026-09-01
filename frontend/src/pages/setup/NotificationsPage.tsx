@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +10,7 @@ type FilterType = "all" | "unread" | "read";
 export function NotificationsPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications", filter],
@@ -40,10 +42,7 @@ export function NotificationsPage() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h1 className="font-display text-2xl font-semibold">Notifications</h1>
         {!!data?.unreadCount && (
-          <button
-            onClick={() => markAllReadMutation.mutate()}
-            className="text-xs text-accent-teal font-medium"
-          >
+          <button onClick={() => markAllReadMutation.mutate()} className="text-xs text-accent-teal font-medium">
             Mark all read
           </button>
         )}
@@ -75,16 +74,22 @@ export function NotificationsPage() {
         {data?.notifications.map((n) => (
           <Card key={n._id} className={`!p-4 ${!n.read ? "border-accent-teal/40" : ""}`}>
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2 min-w-0">
+              <button
+                onClick={() => {
+                  if (!n.read) toggleReadMutation.mutate({ id: n._id, read: false });
+                  navigate(`/notifications/${n._id}`);
+                }}
+                className="flex items-start gap-2 min-w-0 text-left flex-1"
+              >
                 {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-accent-teal mt-1.5 shrink-0" />}
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{n.title}</p>
-                  {n.body && <p className="text-xs text-standby-slate mt-0.5">{n.body}</p>}
+                  {n.body && <p className="text-xs text-standby-slate mt-0.5 truncate">{n.body}</p>}
                   <p className="text-[10px] text-standby-slate/70 mt-1">
                     {new Date(n.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                   </p>
                 </div>
-              </div>
+              </button>
               <button
                 onClick={() => toggleReadMutation.mutate({ id: n._id, read: n.read })}
                 className="text-xs text-accent-teal font-medium shrink-0"

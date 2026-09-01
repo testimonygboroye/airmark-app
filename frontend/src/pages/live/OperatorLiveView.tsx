@@ -1,9 +1,7 @@
 import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
-import { SignalButton } from "@/components/live/SignalButton";
+import { OperatorActionDock } from "@/components/live/OperatorActionDock";
 import { TalkbackBanner } from "@/components/live/TalkbackBanner";
-import { MarkButton } from "@/components/live/MarkButton";
-import { EquipmentReportButton } from "@/components/live/EquipmentReportButton";
 import type { CameraAssignmentRecord, RunOfShowSegmentRecord, TalkbackMessageRecord } from "@/types";
 
 interface Props {
@@ -32,34 +30,37 @@ export function OperatorLiveView({
   return (
     <div
       className={`min-h-screen flex flex-col relative transition-colors duration-300 ${
-        camera.isLive ? "bg-signal-red" : "bg-navy"
+        camera.isLive ? "bg-signal-red text-white" : "bg-navy text-surface-light"
       }`}
     >
       <CountdownOverlay targetAt={countdownTargetAt} />
       <TalkbackBanner message={latestTalkback} />
-      <SignalButton eventId={eventId} teamId={teamId} />
-      <MarkButton eventId={eventId} teamId={teamId} />
-      <EquipmentReportButton eventId={eventId} teamId={teamId} cameraId={camera._id} />
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
-      <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <p className="text-sm font-medium opacity-70 tracking-widest uppercase mb-3">
           {camera.label} (You)
         </p>
-        <h1 className="font-display text-6xl font-bold tracking-tight mb-6">
+        <h1 className="font-display text-6xl font-bold tracking-tight mb-4">
           {camera.isLive ? "LIVE" : "STANDBY"}
         </h1>
+        <p className="text-xs opacity-60 text-center max-w-xs">
+          Airmark controls when to switch — it doesn't capture or show video. Keep your actual
+          camera pointed and ready; this screen just tells you whether you're on-air right now.
+        </p>
 
         {!camera.isLive && liveCamera && (
-          <div className="mt-4 px-5 py-3 rounded-xl bg-white/10 backdrop-blur-sm">
-            <p className="text-xs text-surface-light/60 text-center">Currently live</p>
+          <div className="mt-6 px-5 py-3 rounded-xl bg-white/10 backdrop-blur-sm">
+            <p className="text-xs opacity-60 text-center">Currently live</p>
             <p className="font-display font-semibold text-center">{liveCamera.label}</p>
           </div>
         )}
       </div>
 
-      <p className="pb-8 text-xs text-surface-light/40 px-6 text-center">
+      <OperatorActionDock eventId={eventId} teamId={teamId} cameraId={camera._id} />
+
+      <p className="pb-28 text-xs opacity-40 px-6 text-center">
         Wait for this screen to show LIVE before repositioning your camera.
       </p>
     </div>

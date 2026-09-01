@@ -79,7 +79,7 @@ export function DirectorLiveView({
   const obsConnected = obsConnection.status === "connected";
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light">
       <CountdownOverlay targetAt={countdownTargetAt} />
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <MarkButton eventId={eventId} teamId={event.teamId} />

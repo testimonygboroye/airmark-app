@@ -19,12 +19,13 @@ export function VerifyEmailPage() {
     }
     apiClient
       .post("/auth/verify-email", { token })
-      .then(() => setStatus("success"))
+      .then((res) => {
+        setStatus("success");
+        setMessage(res.data.message);
+      })
       .catch((err) => {
         setStatus("error");
-        setMessage(
-          err?.response?.data?.message || "This link is invalid or has expired."
-        );
+        setMessage(err?.response?.data?.message || "This link is invalid or has expired.");
       });
   }, [token]);
 
@@ -42,9 +43,7 @@ export function VerifyEmailPage() {
           {status === "success" && (
             <>
               <h1 className="font-display text-xl font-semibold mb-2">Email verified</h1>
-              <p className="text-sm text-standby-slate mb-6">
-                Your account is now active.
-              </p>
+              <p className="text-sm text-standby-slate mb-6">{message}</p>
               <Link to="/login" className="text-accent-teal font-medium text-sm">
                 Continue to login
               </Link>
@@ -52,9 +51,7 @@ export function VerifyEmailPage() {
           )}
           {status === "error" && (
             <>
-              <h1 className="font-display text-xl font-semibold mb-2 text-signal-red">
-                Verification failed
-              </h1>
+              <h1 className="font-display text-xl font-semibold mb-2 text-signal-red">Verification failed</h1>
               <p className="text-sm text-standby-slate mb-6">{message}</p>
               <Link to="/login" className="text-accent-teal font-medium text-sm">
                 Back to login

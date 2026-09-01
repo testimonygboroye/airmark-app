@@ -1,10 +1,14 @@
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { useNavHistoryStore } from "@/store/navHistoryStore";
 
 export function BottomNav() {
+  const location = useLocation();
+  const lastHomePath = useNavHistoryStore((s) => s.lastHomePath);
+
   const { data } = useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", "all"],
     queryFn: async () => {
       const res = await apiClient.get<{ data: { unreadCount: number } }>("/notifications");
       return res.data.data;
@@ -12,10 +16,13 @@ export function BottomNav() {
     refetchInterval: 30000,
   });
 
+  const isHomeActive = location.pathname !== "/notifications" && location.pathname !== "/profile";
+
   const items = [
     {
-      to: "/dashboard",
+      to: lastHomePath,
       label: "Home",
+      active: isHomeActive,
       icon: (
         <path d="M4 11l8-7 8 7M6 10v9a1 1 0 001 1h3v-6h4v6h3a1 1 0 001-1v-9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       ),
@@ -23,6 +30,7 @@ export function BottomNav() {
     {
       to: "/notifications",
       label: "Alerts",
+      active: location.pathname === "/notifications",
       badge: data?.unreadCount,
       icon: (
         <path
@@ -36,6 +44,7 @@ export function BottomNav() {
     {
       to: "/profile",
       label: "Profile",
+      active: location.pathname === "/profile",
       icon: (
         <>
           <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
@@ -49,13 +58,11 @@ export function BottomNav() {
     <nav className="md:hidden sticky bottom-0 left-0 right-0 z-30 bg-surface-light dark:bg-navy border-t border-standby-slate/15 flex items-stretch pb-[env(safe-area-inset-bottom)]">
       {items.map((item) => (
         <NavLink
-          key={item.to}
+          key={item.label}
           to={item.to}
-          className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative ${
-              isActive ? "text-accent-teal" : "text-standby-slate"
-            }`
-          }
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative ${
+            item.active ? "text-accent-teal" : "text-standby-slate"
+          }`}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             {item.icon}
