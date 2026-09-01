@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand/Logo";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { FirstVisitHelpModal } from "@/components/ui/FirstVisitHelpModal";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
@@ -34,6 +35,7 @@ export function SetupLayout() {
     { label: "New Team", to: "/teams/new" },
     { label: "Invites", to: "/invites" },
     { label: "Profile", to: "/profile" },
+    { label: "Help & Guide", to: "/help" },
   ];
 
   return (
@@ -167,6 +169,7 @@ export function SetupLayout() {
       </main>
 
       <BottomNav />
+      <FirstVisitHelpModal />
     </div>
   );
 }
