@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { Card } from "@/components/ui/Card";
@@ -6,6 +7,7 @@ import type { MyInviteRecord } from "@/types";
 
 export function MyInvitesPage() {
   const queryClient = useQueryClient();
+  const [message, setMessage] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["myInvites"],
@@ -17,11 +19,14 @@ export function MyInvitesPage() {
 
   const acceptMutation = useMutation({
     mutationFn: async (inviteId: string) => {
-      await apiClient.post(`/invites/${inviteId}/accept`);
+      const res = await apiClient.post<{ message: string }>(`/invites/${inviteId}/accept`);
+      return res.data.message;
     },
-    onSuccess: () => {
+    onSuccess: (msg) => {
+      setMessage(msg);
       queryClient.invalidateQueries({ queryKey: ["myInvites"] });
       queryClient.invalidateQueries({ queryKey: ["myTeams"] });
+      setTimeout(() => setMessage(null), 4000);
     },
   });
 
@@ -35,6 +40,12 @@ export function MyInvitesPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="font-display text-2xl font-semibold mb-6">Team invites</h1>
+
+      {message && (
+        <div className="mb-4 rounded-lg bg-accent-teal/10 border border-accent-teal/30 px-4 py-3 text-sm text-accent-teal font-medium">
+          {message}
+        </div>
+      )}
 
       {isLoading && <p className="text-sm text-standby-slate">Loading…</p>}
 

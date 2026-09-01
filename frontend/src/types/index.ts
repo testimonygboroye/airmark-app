@@ -282,3 +282,7 @@ export interface MyInviteRecord {
   invitedBy: { _id: string; firstName: string; lastName: string };
   expiresAt: string;
 }
+
+export interface VapidKeyResponse {
+  publicKey: string;
+}

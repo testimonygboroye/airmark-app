@@ -99,6 +99,24 @@ export function TeamMembersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] }),
   });
 
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferTarget, setTransferTarget] = useState("");
+  const [transferMessage, setTransferMessage] = useState<string | null>(null);
+  const transferMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post<{ message: string }>(`/teams/${teamId}/transfer-ownership`, {
+        newOwnerMembershipId: transferTarget,
+      });
+      return res.data.message;
+    },
+    onSuccess: (msg) => {
+      setTransferMessage(msg);
+      setShowTransfer(false);
+      queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
+      queryClient.invalidateQueries({ queryKey: ["myTeams"] });
+    },
+  });
+
   const removeMutation = useMutation({
     mutationFn: async (membershipId: string) => {
       await apiClient.delete(`/teams/${teamId}/members/${membershipId}`);
