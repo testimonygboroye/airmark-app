@@ -46,7 +46,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-surface-light dark:bg-navy border-t border-standby-slate/15 flex items-stretch pb-[env(safe-area-inset-bottom)]">
+    <nav className="md:hidden sticky bottom-0 left-0 right-0 z-30 bg-surface-light dark:bg-navy border-t border-standby-slate/15 flex items-stretch pb-[env(safe-area-inset-bottom)]">
       {items.map((item) => (
         <NavLink
           key={item.to}

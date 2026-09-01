@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import { Team } from "../models/Team.model";
+import { Role } from "../models/Role.model";
 import { Membership } from "../models/Membership.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -127,4 +128,34 @@ export const updateTeam = asyncHandler(async (req: Request, res: Response) => {
   await team.save();
 
   res.json({ success: true, data: team });
+});
+
+export const transferOwnership = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const { newOwnerMembershipId } = req.body;
+
+  const ownerRole = await Role.findOne({ teamId, name: "Team Owner", isSystemRole: true });
+  if (!ownerRole) throw ApiError.notFound("Team Owner role not found");
+
+  const currentOwnerMembership = await Membership.findOne({
+    teamId,
+    roleId: ownerRole._id,
+    status: "active",
+  });
+  if (!currentOwnerMembership || currentOwnerMembership.userId.toString() !== req.user!.id) {
+    throw ApiError.forbidden("Only the current Team Owner can transfer ownership");
+  }
+
+  const targetMembership = await Membership.findOne({ _id: newOwnerMembershipId, teamId, status: "active" });
+  if (!targetMembership) throw ApiError.notFound("Target member not found on this team");
+
+  const directorRole = await Role.findOne({ teamId, name: "Director", isSystemRole: true });
+  if (!directorRole) throw ApiError.notFound("Director role not found");
+
+  targetMembership.roleId = ownerRole._id as Types.ObjectId;
+  currentOwnerMembership.roleId = directorRole._id as Types.ObjectId;
+
+  await Promise.all([targetMembership.save(), currentOwnerMembership.save()]);
+
+  res.json({ success: true, message: "Ownership transferred. You are now a Director on this team." });
 });

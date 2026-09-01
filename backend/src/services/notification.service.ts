@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Notification } from "../models/Notification.model";
 import { getSocketServer } from "../sockets";
+import { sendPushToUser } from "./push.service";
 import type { NotificationType } from "../models/Notification.model";
 
 interface CreateNotificationInput {
@@ -12,12 +13,6 @@ interface CreateNotificationInput {
   body?: string;
 }
 
-/**
- * Persists a notification and pushes it live over the user's personal
- * socket room if they're currently connected — the notification center
- * remains the source of truth either way, so nothing is lost if they're
- * offline or on a different screen when it happens.
- */
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
   const notification = await Notification.create(input);
 
@@ -26,4 +21,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
   } catch {
     /* socket server not yet initialized (e.g. during tests) — safe to skip */
   }
+
+  // Best-effort — a failed push (e.g. no subscription yet) must never
+  // block the in-app notification, which is already reliably delivered.
+  sendPushToUser(input.userId.toString(), { title: input.title, body: input.body }).catch(() => {});
 }

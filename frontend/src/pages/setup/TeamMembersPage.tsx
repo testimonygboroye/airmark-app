@@ -109,7 +109,7 @@ export function TeamMembersPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6 gap-3">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         {editingName ? (
           <div className="flex items-center gap-2 flex-1">
             <Input label="" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="flex-1" />
@@ -140,7 +140,7 @@ export function TeamMembersPage() {
             )}
           </div>
         )}
-        <Link to={`/teams/${teamId}/events`} className="text-xs text-accent-teal font-medium shrink-0">
+        <Link to={`/teams/${teamId}/events`} className={`text-xs text-accent-teal font-medium shrink-0 ${editingName ? "hidden sm:inline" : ""}`}>
           Back
         </Link>
       </div>
@@ -199,7 +199,7 @@ export function TeamMembersPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => revokeMutation.mutate(invite._id)}
+                  onClick={() => confirm(`Revoke the invite to ${invite.email}?`) && revokeMutation.mutate(invite._id)}
                   className="text-xs text-signal-red font-medium"
                 >
                   Revoke

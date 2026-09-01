@@ -7,6 +7,7 @@ import scheduleRoutes from "./schedule.routes";
 import adminRoutes from "./admin.routes";
 import notificationRoutes from "./notification.routes";
 import publicInviteRoutes from "./publicInvite.routes";
+import pushRoutes from "./push.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/schedule", scheduleRoutes);
 router.use("/admin", adminRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/invites", publicInviteRoutes);
+router.use("/push", pushRoutes);
 
 export default router;

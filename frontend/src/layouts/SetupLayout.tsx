@@ -39,7 +39,7 @@ export function SetupLayout() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface-light dark:bg-navy">
       <aside
-        className={`hidden md:flex md:flex-col border-r border-standby-slate/15 py-6 transition-all ${
+        className={`hidden md:flex md:flex-col md:sticky md:top-0 md:h-screen border-r border-standby-slate/15 py-6 transition-all ${
           collapsed ? "md:w-16 px-2" : "md:w-64 px-4"
         }`}
       >
@@ -102,7 +102,7 @@ export function SetupLayout() {
         </div>
       </aside>
 
-      <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-standby-slate/15">
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-standby-slate/15 bg-surface-light dark:bg-navy">
         <Logo size={26} />
         <div className="flex items-center gap-1">
           <NotificationBell />
@@ -117,7 +117,7 @@ export function SetupLayout() {
       {sidebarOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-72 bg-surface-light dark:bg-navy h-full px-4 py-6 flex flex-col">
+          <div className="relative w-72 bg-surface-light dark:bg-navy h-full px-4 py-6 flex flex-col overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <Logo size={26} />
               <button onClick={() => setSidebarOpen(false)} aria-label="Close menu">

@@ -11,6 +11,7 @@ import {
   updateMemberRoleSchema,
   removeMemberSchema,
   updateTeamSchema,
+  transferOwnershipSchema,
 } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
 
@@ -29,6 +30,12 @@ router.patch(
   validate(updateTeamSchema),
   requirePermission(PERMISSIONS.TEAM_MANAGE),
   teamController.updateTeam
+);
+router.post(
+  "/:teamId/transfer-ownership",
+  validate(transferOwnershipSchema),
+  requirePermission(PERMISSIONS.TEAM_MANAGE),
+  teamController.transferOwnership
 );
 router.patch(
   "/:teamId/members/:membershipId/role",

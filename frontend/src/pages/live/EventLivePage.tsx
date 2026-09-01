@@ -31,6 +31,7 @@ export function EventLivePage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { user } = useAuthStore();
 
+  const [event, setEvent] = useState<EventRecord | null>(null);
   const [cameras, setCameras] = useState<CameraAssignmentRecord[]>([]);
   const [segments, setSegments] = useState<RunOfShowSegmentRecord[]>([]);
   const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
@@ -61,12 +62,9 @@ export function EventLivePage() {
     retry: 1,
   });
 
-  // Initialize local mutable state once the fetch succeeds. Using data
-  // directly (not a side-effect inside queryFn) means isLoading/isError
-  // from React Query stay authoritative — no more "stuck spinner forever
-  // on a failed fetch" bug.
   useEffect(() => {
     if (!eventData) return;
+    setEvent(eventData.event);
     setCameras(eventData.cameras);
     setSegments(eventData.segments);
     setCurrentSegment(eventData.currentSegment);
@@ -74,7 +72,6 @@ export function EventLivePage() {
     setCountdownTargetAt(eventData.countdownTargetAt);
   }, [eventData]);
 
-  const event = eventData?.event ?? null;
   const { hasPermission } = useTeamRole(event?.teamId);
   const isDirector = hasPermission("tally:control");
 
@@ -136,6 +133,21 @@ export function EventLivePage() {
         setLatestTalkback(payload.message);
       }
     }
+    /**
+     * This is the fix — previously nothing updated event.status after
+     * Start/End Event, so the buttons appeared to "do nothing" even
+     * though the request succeeded on the server every time.
+     */
+    function handleEventStatusUpdate(payload: {
+      eventId: string;
+      status: "scheduled" | "live" | "ended";
+      actualStartAt?: string;
+      endedAt?: string;
+    }) {
+      if (payload.eventId === eventId) {
+        setEvent((prev) => (prev ? { ...prev, status: payload.status } : prev));
+      }
+    }
     function handleObsStatus(payload: { eventId: string; status: "connected" | "disconnected" }) {
       if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, status: payload.status }));
     }
@@ -180,6 +192,7 @@ export function EventLivePage() {
     socket.on("signal:new", handleSignalNew);
     socket.on("signal:ack", handleSignalAck);
     socket.on("talkback:new", handleTalkbackNew);
+    socket.on("event:status-update", handleEventStatusUpdate);
     socket.on("obs:status", handleObsStatus);
     socket.on("obs:full-update", handleObsFullUpdate);
     socket.on("obs:scene-changed", handleObsSceneChanged);
@@ -196,6 +209,7 @@ export function EventLivePage() {
       socket.off("signal:new", handleSignalNew);
       socket.off("signal:ack", handleSignalAck);
       socket.off("talkback:new", handleTalkbackNew);
+      socket.off("event:status-update", handleEventStatusUpdate);
       socket.off("obs:status", handleObsStatus);
       socket.off("obs:full-update", handleObsFullUpdate);
       socket.off("obs:scene-changed", handleObsSceneChanged);
@@ -207,7 +221,7 @@ export function EventLivePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-navy">
         <Spinner size={28} />
       </div>
     );
@@ -215,9 +229,9 @@ export function EventLivePage() {
 
   if (isError || !event) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-navy text-surface-light">
         <p className="text-surface-light/70 text-sm">
-          {getErrorMessage(error, "Couldn't load this event.")}
+          {getErrorMessage(error, "Couldn't load this event. Check your connection.")}
         </p>
         <Button onClick={() => refetch()}>Retry</Button>
       </div>
@@ -258,7 +272,7 @@ export function EventLivePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 text-center">
+    <div className="min-h-screen flex items-center justify-center px-6 text-center bg-navy text-surface-light">
       <p className="text-surface-light/60 text-sm">
         You're not assigned to a camera for this event yet.
       </p>
