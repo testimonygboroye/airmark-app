@@ -36,7 +36,7 @@ export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-surface-light/70 font-medium px-3 py-1.5 rounded-lg border border-white/15"
+        className="text-xs text-standby-slate dark:text-surface-light/70 font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15"
       >
         Connect OBS
       </button>
@@ -45,7 +45,7 @@ export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-navy/90 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-navy border border-white/15 rounded-2xl p-5">
+      <div className="w-full max-w-sm bg-navy border border-standby-slate/30 dark:border-white/15 rounded-2xl p-5">
         <p className="font-display font-semibold mb-2">Connect OBS Studio</p>
         <p className="text-xs text-surface-light/60 mb-4">
           On the laptop running OBS, run the Airmark bridge script and paste this code when prompted. Valid for 10 minutes.
@@ -80,7 +80,7 @@ export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
             setOpen(false);
             setPairingToken(null);
           }}
-          className="w-full py-2.5 rounded-lg text-sm text-surface-light/60 border border-white/15"
+          className="w-full py-2.5 rounded-lg text-sm text-surface-light/60 border border-standby-slate/30 dark:border-white/15"
         >
           Close
         </button>

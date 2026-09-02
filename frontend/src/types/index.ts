@@ -249,6 +249,7 @@ export interface AdminStats {
 export type NotificationType = "talkback" | "signal" | "equipment" | "tally" | "ros" | "system";
 
 export interface NotificationRecord {
+  senderEmail?: string;
   _id: string;
   userId: string;
   teamId: string;

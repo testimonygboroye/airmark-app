@@ -42,7 +42,7 @@ export function ObsTransitionControls({
           onClick={() => setTransitionMutation.mutate(t)}
           disabled={setTransitionMutation.isPending}
           className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-            t === currentTransition ? "bg-accent-teal text-navy" : "bg-white/5 text-surface-light/70"
+            t === currentTransition ? "bg-accent-teal text-navy" : "bg-white/5 text-standby-slate dark:text-surface-light/70"
           }`}
         >
           {t}

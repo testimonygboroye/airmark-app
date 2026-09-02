@@ -34,7 +34,7 @@ export function TalkbackControls({ eventId, teamId, cameras }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-surface-light/70 font-medium px-3 py-1.5 rounded-lg border border-white/15"
+        className="text-xs text-standby-slate dark:text-surface-light/70 font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15"
       >
         Send message
       </button>
@@ -43,11 +43,11 @@ export function TalkbackControls({ eventId, teamId, cameras }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-navy/90 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-navy border border-white/15 rounded-2xl p-5">
+      <div className="w-full max-w-sm bg-navy border border-standby-slate/30 dark:border-white/15 rounded-2xl p-5">
         <p className="font-display font-semibold mb-4">Send a cue</p>
 
         <select
-          className="w-full text-sm rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 mb-3"
+          className="w-full text-sm rounded-lg border border-standby-slate/30 dark:border-white/15 bg-white/5 px-3 py-2.5 mb-3"
           value={targetUserId}
           onChange={(e) => setTargetUserId(e.target.value)}
         >
@@ -60,7 +60,7 @@ export function TalkbackControls({ eventId, teamId, cameras }: Props) {
         </select>
 
         <textarea
-          className="w-full text-sm rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 mb-4 resize-none"
+          className="w-full text-sm rounded-lg border border-standby-slate/30 dark:border-white/15 bg-white/5 px-3 py-2.5 mb-4 resize-none"
           rows={3}
           maxLength={200}
           placeholder="e.g. Tighten your shot"
@@ -71,7 +71,7 @@ export function TalkbackControls({ eventId, teamId, cameras }: Props) {
         <div className="flex gap-2">
           <button
             onClick={() => setOpen(false)}
-            className="flex-1 py-2.5 rounded-lg text-sm text-surface-light/60 border border-white/15"
+            className="flex-1 py-2.5 rounded-lg text-sm text-surface-light/60 border border-standby-slate/30 dark:border-white/15"
           >
             Cancel
           </button>

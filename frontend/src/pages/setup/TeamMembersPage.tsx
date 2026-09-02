@@ -121,7 +121,7 @@ export function TeamMembersPage() {
   const transferMutation = useMutation({
     mutationFn: async () => {
       const res = await apiClient.post<{ message: string }>(`/teams/${teamId}/transfer-ownership`, {
-        newOwnerMembershipId: transferTarget,
+        email: transferTarget,
       });
       return res.data.message;
     },

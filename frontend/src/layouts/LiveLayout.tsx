@@ -8,13 +8,6 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
 
-/**
- * Same navigation shell as Setup Mode, deliberately reused — the brief's
- * "minimal chrome" intent was about not distracting from the live status,
- * but a director/operator genuinely needs to reach team management etc.
- * mid-event without losing their place. Kept intentionally slim (no
- * sidebar/collapse complexity) to stay out of the way.
- */
 export function LiveLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, clearAuth } = useAuthStore();
@@ -30,6 +23,14 @@ export function LiveLayout() {
       navigate("/login", { state: { loggedOut: true }, replace: true });
     }
   }
+
+  const navItems = [
+    { label: "Dashboard", to: "/dashboard" },
+    { label: "New Team", to: "/teams/new" },
+    { label: "Invites", to: "/invites" },
+    { label: "Profile", to: "/profile" },
+    { label: "Help & Guide", to: "/help" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-light dark:bg-navy">
@@ -58,23 +59,21 @@ export function LiveLayout() {
               </button>
             </div>
             <nav className="flex flex-col gap-1">
-              <Link to="/dashboard" onClick={() => setSidebarOpen(false)} className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5">
-                Dashboard
-              </Link>
-              <Link to="/profile" onClick={() => setSidebarOpen(false)} className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5">
-                Profile
-              </Link>
+              {navItems.map((item) => (
+                <Link key={item.to} to={item.to} onClick={() => setSidebarOpen(false)} className="px-3 py-3 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5">
+                  {item.label}
+                </Link>
+              ))}
+              {user?.isSuperAdmin && (
+                <Link to="/system-console" onClick={() => setSidebarOpen(false)} className="px-3 py-3 rounded-lg text-sm font-medium text-signal-red hover:bg-black/5 dark:hover:bg-white/5">
+                  System Console
+                </Link>
+              )}
             </nav>
             <div className="mt-auto pt-6 border-t border-standby-slate/15">
-              <p className="text-sm font-medium">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <div className="mt-2">
-                <ThemeToggle />
-              </div>
-              <button onClick={handleLogout} className="text-xs text-signal-red font-medium mt-3">
-                Log out
-              </button>
+              <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+              <div className="mt-2"><ThemeToggle /></div>
+              <button onClick={handleLogout} className="text-xs text-signal-red font-medium mt-3">Log out</button>
             </div>
           </div>
         </div>

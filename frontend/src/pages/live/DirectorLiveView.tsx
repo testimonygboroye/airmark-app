@@ -38,6 +38,7 @@ interface Props {
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
   countdownTargetAt: string | null;
+  countdownPausedRemainingMs?: number | null;
   signals: SignalRecord[];
   obsConnection: ObsConnectionRecord;
 }
@@ -55,6 +56,7 @@ export function DirectorLiveView({
 }: Props) {
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
+  const isPaused = !countdownActive && !!countdownPausedRemainingMs;
 
   const setLiveMutation = useMutation({
     mutationFn: async (cameraId: string) => {
@@ -79,7 +81,7 @@ export function DirectorLiveView({
   const obsConnected = obsConnection.status === "connected";
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light">
+    <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
       <CountdownOverlay targetAt={countdownTargetAt} />
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
@@ -113,7 +115,7 @@ export function DirectorLiveView({
             <button
               onClick={() => endMutation.mutate()}
               disabled={endMutation.isPending}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 text-surface-light/70"
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70"
             >
               End Event
             </button>
@@ -148,10 +150,10 @@ export function DirectorLiveView({
             </>
           )}
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
-          <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} />
+          <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} isPaused={isPaused} />
           <button
             onClick={() => navigate(-1)}
-            className="text-xs text-surface-light/60 font-medium px-3 py-1.5 rounded-lg border border-white/15"
+            className="text-xs text-standby-slate dark:text-surface-light/60 font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15"
           >
             Exit
           </button>

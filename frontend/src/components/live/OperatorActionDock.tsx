@@ -83,7 +83,7 @@ export function OperatorActionDock({ eventId, teamId, cameraId }: Props) {
         </div>
       )}
 
-      <div className="fixed bottom-6 left-0 right-0 z-30 px-6 flex items-end justify-between">
+      <div className="fixed bottom-20 left-0 right-0 z-30 px-6 flex items-end justify-between">
         {/* Mark — bottom left */}
         <div className="relative">
           {openPanel === "mark" && (
