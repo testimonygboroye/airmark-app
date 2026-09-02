@@ -11,5 +11,6 @@ router.use(requireSuperAdmin);
 router.get("/teams", adminController.getAllTeams);
 router.get("/users", adminController.getAllUsers);
 router.get("/stats", adminController.getSystemStats);
+router.delete("/users/:userId", adminController.deleteUser);
 
 export default router;

@@ -11,7 +11,7 @@ import {
   updateMemberRoleSchema,
   removeMemberSchema,
   updateTeamSchema,
-  transferOwnershipSchema,
+  transferOwnershipByEmailSchema,
   deleteTeamSchema,
 } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
@@ -21,49 +21,12 @@ const router = Router();
 router.use(requireAuth);
 router.post("/", validate(createTeamSchema), teamController.createTeam);
 router.get("/my", teamController.getMyTeams);
-router.get(
-  "/:teamId/members",
-  requirePermission(PERMISSIONS.TEAM_VIEW),
-  teamController.getTeamMembers
-);
-router.delete(
-  "/:teamId",
-  validate(deleteTeamSchema),
-  requirePermission(PERMISSIONS.TEAM_MANAGE),
-  teamController.deleteTeam
-);
-
-router.patch(
-  "/:teamId",
-  validate(updateTeamSchema),
-  requirePermission(PERMISSIONS.TEAM_MANAGE),
-  teamController.updateTeam
-);
-router.post(
-  "/:teamId/transfer-ownership",
-  validate(transferOwnershipSchema),
-  requirePermission(PERMISSIONS.TEAM_MANAGE),
-  teamController.transferOwnership
-);
-router.delete(
-  "/:teamId",
-  validate(deleteTeamSchema),
-  requirePermission(PERMISSIONS.TEAM_MANAGE),
-  teamController.deleteTeam
-);
-
-router.patch(
-  "/:teamId/members/:membershipId/role",
-  validate(updateMemberRoleSchema),
-  requirePermission(PERMISSIONS.MEMBER_INVITE),
-  teamController.updateMemberRole
-);
-router.delete(
-  "/:teamId/members/:membershipId",
-  validate(removeMemberSchema),
-  requirePermission(PERMISSIONS.MEMBER_REMOVE),
-  teamController.removeMember
-);
+router.get("/:teamId/members", requirePermission(PERMISSIONS.TEAM_VIEW), teamController.getTeamMembers);
+router.patch("/:teamId", validate(updateTeamSchema), requirePermission(PERMISSIONS.TEAM_MANAGE), teamController.updateTeam);
+router.delete("/:teamId", validate(deleteTeamSchema), requirePermission(PERMISSIONS.TEAM_MANAGE), teamController.deleteTeam);
+router.post("/:teamId/transfer-ownership", validate(transferOwnershipByEmailSchema), requirePermission(PERMISSIONS.TEAM_MANAGE), teamController.transferOwnershipByEmail);
+router.patch("/:teamId/members/:membershipId/role", validate(updateMemberRoleSchema), requirePermission(PERMISSIONS.MEMBER_INVITE), teamController.updateMemberRole);
+router.delete("/:teamId/members/:membershipId", validate(removeMemberSchema), requirePermission(PERMISSIONS.MEMBER_REMOVE), teamController.removeMember);
 router.use("/:teamId/checklist-templates", teamChecklistRouter);
 router.use("/:teamId/roles", roleRoutes);
 router.use("/:teamId/invites", inviteRoutes);

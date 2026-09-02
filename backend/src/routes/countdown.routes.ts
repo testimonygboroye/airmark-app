@@ -7,21 +7,10 @@ import { startCountdownSchema, cancelCountdownSchema } from "../validators/count
 import { PERMISSIONS } from "../utils/permissions";
 
 const router = Router({ mergeParams: true });
-
 router.use(requireAuth);
-
-router.post(
-  "/start",
-  validate(startCountdownSchema),
-  requirePermission(PERMISSIONS.COUNTDOWN_CONTROL),
-  countdownController.startCountdown
-);
-
-router.post(
-  "/cancel",
-  validate(cancelCountdownSchema),
-  requirePermission(PERMISSIONS.COUNTDOWN_CONTROL),
-  countdownController.cancelCountdown
-);
+router.post("/start", validate(startCountdownSchema), requirePermission(PERMISSIONS.COUNTDOWN_CONTROL), countdownController.startCountdown);
+router.post("/pause", validate(cancelCountdownSchema), requirePermission(PERMISSIONS.COUNTDOWN_CONTROL), countdownController.pauseCountdown);
+router.post("/resume", validate(cancelCountdownSchema), requirePermission(PERMISSIONS.COUNTDOWN_CONTROL), countdownController.resumeCountdown);
+router.post("/cancel", validate(cancelCountdownSchema), requirePermission(PERMISSIONS.COUNTDOWN_CONTROL), countdownController.cancelCountdown);
 
 export default router;

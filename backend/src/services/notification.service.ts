@@ -11,6 +11,7 @@ interface CreateNotificationInput {
   type: NotificationType;
   title: string;
   body?: string;
+  senderEmail?: string;
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
@@ -22,7 +23,5 @@ export async function createNotification(input: CreateNotificationInput): Promis
     /* socket server not yet initialized (e.g. during tests) — safe to skip */
   }
 
-  // Best-effort — a failed push (e.g. no subscription yet) must never
-  // block the in-app notification, which is already reliably delivered.
   sendPushToUser(input.userId.toString(), { title: input.title, body: input.body }).catch(() => {});
 }

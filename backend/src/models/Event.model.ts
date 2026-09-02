@@ -10,6 +10,7 @@ export interface IEvent extends Document {
   status: EventStatus;
   currentSegmentId?: Types.ObjectId;
   countdownTargetAt?: Date;
+  countdownPausedRemainingMs?: number;
   actualStartAt?: Date;
   endedAt?: Date;
   createdBy: Types.ObjectId;
@@ -30,6 +31,7 @@ const eventSchema = new Schema<IEvent>(
     },
     currentSegmentId: { type: Schema.Types.ObjectId, ref: "RunOfShowSegment" },
     countdownTargetAt: { type: Date },
+    countdownPausedRemainingMs: { type: Number },
     actualStartAt: { type: Date },
     endedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

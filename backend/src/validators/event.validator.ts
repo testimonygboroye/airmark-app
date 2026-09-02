@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createEventSchema = z.object({
   body: z.object({
     teamId: z.string().min(1),
-    title: z.string().trim().min(2).max(120),
+    title: z.string().trim().min(3, "Event title must be at least 3 characters").max(100, "Event title can't exceed 100 characters"),
     scheduledStart: z.string().datetime({ message: "Must be a valid ISO 8601 datetime" }),
     cameraCount: z.number().int().min(1).max(20),
   }),

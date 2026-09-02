@@ -30,31 +30,21 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
 
   if (existingUser) {
     const alreadyMember = await Membership.findOne({ userId: existingUser._id, teamId });
-    if (alreadyMember) {
-      throw ApiError.conflict("This person is already a member of the team");
-    }
+    if (alreadyMember) throw ApiError.conflict("This person is already a member of the team");
   }
 
   const existingInvite = await TeamInvite.findOne({ teamId, email, status: "pending" });
-  if (existingInvite) {
-    throw ApiError.conflict("An invite is already pending for this email");
-  }
+  if (existingInvite) throw ApiError.conflict("An invite is already pending for this email");
 
   const { raw, hash } = generateSecureToken();
   await TeamInvite.create({
-    teamId,
-    email,
-    roleId,
-    invitedBy,
-    tokenHash: hash,
+    teamId, email, roleId, invitedBy, tokenHash: hash,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
   const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : "A team director";
 
   if (existingUser) {
-    // Existing Airmark user — notify in-app, they must accept/decline
-    // themselves. Never auto-added, per confirmation requirement.
     await createNotification({
       userId: existingUser._id,
       teamId,
@@ -62,51 +52,27 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
       title: `Invitation to join ${team.name}`,
       body: `${inviterName} invited you as ${role.name}. Open Invites to respond.`,
     });
-    res.status(201).json({
-      success: true,
-      message: `${existingUser.firstName} was notified in-app and must accept the invite themselves.`,
-      data: { type: "notified_in_app" },
-    });
+    res.status(201).json({ success: true, message: `${existingUser.firstName} was notified in-app and must accept the invite themselves.`, data: { type: "notified_in_app" } });
     return;
   }
 
   const inviteUrl = `${env.CLIENT_URL}/register?inviteToken=${raw}&email=${encodeURIComponent(email)}`;
   await sendTeamInviteEmail(email, team.name, role.name, inviterName, inviteUrl);
-
-  res.status(201).json({
-    success: true,
-    message: `Invitation email sent to ${email}.`,
-    data: { type: "invited" },
-  });
+  res.status(201).json({ success: true, message: `Invitation email sent to ${email}.`, data: { type: "invited" } });
 });
 
 export const checkInvite = asyncHandler(async (req: Request, res: Response) => {
   const token = req.params.token as string;
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-
   const invite = await TeamInvite.findOne({ tokenHash, status: "pending", expiresAt: { $gt: new Date() } })
-    .populate("teamId", "name")
-    .populate("roleId", "name");
-
-  if (!invite) {
-    throw ApiError.notFound("This invitation is invalid or has expired");
-  }
-
-  res.json({
-    success: true,
-    data: {
-      teamName: (invite.teamId as any).name,
-      roleName: (invite.roleId as any).name,
-      email: invite.email,
-    },
-  });
+    .populate("teamId", "name").populate("roleId", "name");
+  if (!invite) throw ApiError.notFound("This invitation is invalid or has expired");
+  res.json({ success: true, data: { teamName: (invite.teamId as any).name, roleName: (invite.roleId as any).name, email: invite.email } });
 });
 
 export const listPendingInvites = asyncHandler(async (req: Request, res: Response) => {
   const teamId = req.params.teamId as string;
-  const invites = await TeamInvite.find({ teamId, status: "pending" })
-    .sort({ createdAt: -1 })
-    .populate("roleId", "name");
+  const invites = await TeamInvite.find({ teamId, status: "pending" }).sort({ createdAt: -1 }).populate("roleId", "name");
   res.json({ success: true, data: invites });
 });
 
@@ -118,16 +84,11 @@ export const revokeInvite = asyncHandler(async (req: Request, res: Response) => 
   res.json({ success: true, message: "Invite revoked" });
 });
 
-/** For the invited person themselves — lists invites matching their own email, awaiting response. */
 export const listMyInvites = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user!.id);
   if (!user) throw ApiError.notFound("User not found");
-
   const invites = await TeamInvite.find({ email: user.email, status: "pending", expiresAt: { $gt: new Date() } })
-    .populate("teamId", "name")
-    .populate("roleId", "name")
-    .populate("invitedBy", "firstName lastName");
-
+    .populate("teamId", "name").populate("roleId", "name").populate("invitedBy", "firstName lastName");
   res.json({ success: true, data: invites });
 });
 
@@ -140,29 +101,35 @@ export const acceptMyInvite = asyncHandler(async (req: Request, res: Response) =
   if (!invite) throw ApiError.notFound("Invite not found or already responded to");
   if (invite.expiresAt < new Date()) throw ApiError.badRequest("This invite has expired");
 
-  const alreadyMember = await Membership.findOne({ userId: user._id, teamId: invite.teamId });
-  if (!alreadyMember) {
-    await Membership.create({
-      userId: user._id,
-      teamId: invite.teamId,
-      roleId: invite.roleId,
-      status: "active",
-      createdBy: invite.invitedBy,
+  let membership = await Membership.findOne({ userId: user._id, teamId: invite.teamId });
+  if (!membership) {
+    membership = await Membership.create({
+      userId: user._id, teamId: invite.teamId, roleId: invite.roleId,
+      status: "active", createdBy: invite.invitedBy,
     });
+  } else {
+    membership.roleId = invite.roleId;
+    await membership.save();
   }
+
+  if (invite.isOwnershipTransfer && invite.previousOwnerMembershipId) {
+    const directorRole = await Role.findOne({ teamId: invite.teamId, name: "Director", isSystemRole: true });
+    if (directorRole) {
+      await Membership.findByIdAndUpdate(invite.previousOwnerMembershipId, { roleId: directorRole._id });
+    }
+  }
+
   invite.status = "accepted";
   await invite.save();
 
-  res.json({ success: true, message: "You've joined the team." });
+  res.json({ success: true, message: invite.isOwnershipTransfer ? "You are now Team Owner." : "You've joined the team." });
 });
 
 export const declineMyInvite = asyncHandler(async (req: Request, res: Response) => {
   const inviteId = req.params.inviteId as string;
   const user = await User.findById(req.user!.id);
   if (!user) throw ApiError.notFound("User not found");
-
   const invite = await TeamInvite.findOneAndDelete({ _id: inviteId, email: user.email, status: "pending" });
   if (!invite) throw ApiError.notFound("Invite not found");
-
   res.json({ success: true, message: "Invite declined" });
 });

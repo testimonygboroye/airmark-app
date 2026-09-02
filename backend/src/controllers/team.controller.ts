@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import { Team } from "../models/Team.model";
+import { TeamInvite } from "../models/TeamInvite.model";
 import { Role } from "../models/Role.model";
 import { Membership } from "../models/Membership.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
@@ -190,4 +191,72 @@ export const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
   ]);
 
   res.json({ success: true, message: "Team deleted permanently" });
+});
+
+/**
+ * Transfers ownership by email — works for a current member, a registered
+ * non-member (added directly), or an unregistered person (sent an
+ * ownership-transfer invite; ownership actually moves once they accept).
+ */
+export const transferOwnershipByEmail = asyncHandler(async (req: Request, res: Response) => {
+  const teamId = req.params.teamId as string;
+  const { email } = req.body;
+
+  const ownerRole = await Role.findOne({ teamId, name: "Team Owner", isSystemRole: true });
+  const directorRole = await Role.findOne({ teamId, name: "Director", isSystemRole: true });
+  if (!ownerRole || !directorRole) throw ApiError.notFound("Default roles not found for this team");
+
+  const currentOwnerMembership = await Membership.findOne({ teamId, roleId: ownerRole._id, status: "active" });
+  if (!currentOwnerMembership || currentOwnerMembership.userId.toString() !== req.user!.id) {
+    throw ApiError.forbidden("Only the current Team Owner can transfer ownership");
+  }
+
+  const { User } = await import("../models/User.model");
+  const targetUser = await User.findOne({ email, isEmailVerified: true });
+
+  if (targetUser) {
+    let targetMembership = await Membership.findOne({ userId: targetUser._id, teamId });
+    if (targetMembership) {
+      targetMembership.roleId = ownerRole._id as Types.ObjectId;
+    } else {
+      targetMembership = new Membership({
+        userId: targetUser._id,
+        teamId,
+        roleId: ownerRole._id,
+        status: "active",
+        createdBy: req.user!.id,
+      });
+    }
+    currentOwnerMembership.roleId = directorRole._id as Types.ObjectId;
+    await Promise.all([targetMembership.save(), currentOwnerMembership.save()]);
+
+    res.json({ success: true, message: `Ownership transferred to ${targetUser.firstName}. You are now a Director.` });
+    return;
+  }
+
+  // Not a registered user — send an invite; ownership actually moves on acceptance.
+  const { generateSecureToken } = await import("../utils/jwt.util");
+  const { sendTeamInviteEmail } = await import("../services/email.service");
+  const { env } = await import("../config/env");
+  const team = await Team.findById(teamId);
+
+  const { raw, hash } = generateSecureToken();
+  await TeamInvite.create({
+    teamId,
+    email,
+    roleId: ownerRole._id,
+    invitedBy: req.user!.id,
+    tokenHash: hash,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    isOwnershipTransfer: true,
+    previousOwnerMembershipId: currentOwnerMembership._id,
+  });
+
+  const inviteUrl = `${env.CLIENT_URL}/register?inviteToken=${raw}&email=${encodeURIComponent(email)}`;
+  await sendTeamInviteEmail(email, team?.name ?? "your team", "Team Owner", `${req.user!.email}`, inviteUrl);
+
+  res.json({
+    success: true,
+    message: `${email} isn't an Airmark user yet — an invite was sent. Ownership transfers automatically once they accept.`,
+  });
 });

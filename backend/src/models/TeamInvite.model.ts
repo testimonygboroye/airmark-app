@@ -11,6 +11,8 @@ export interface ITeamInvite extends Document {
   tokenHash: string;
   status: TeamInviteStatus;
   expiresAt: Date;
+  isOwnershipTransfer: boolean;
+  previousOwnerMembershipId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +26,8 @@ const teamInviteSchema = new Schema<ITeamInvite>(
     tokenHash: { type: String, required: true, unique: true },
     status: { type: String, enum: ["pending", "accepted", "expired"], default: "pending" },
     expiresAt: { type: Date, required: true },
+    isOwnershipTransfer: { type: Boolean, default: false },
+    previousOwnerMembershipId: { type: Schema.Types.ObjectId, ref: "Membership" },
   },
   { timestamps: true }
 );

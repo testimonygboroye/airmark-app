@@ -10,6 +10,7 @@ export interface INotification extends Document {
   type: NotificationType;
   title: string;
   body?: string;
+  senderEmail?: string;
   read: boolean;
   createdAt: Date;
 }
@@ -26,6 +27,7 @@ const notificationSchema = new Schema<INotification>(
     },
     title: { type: String, required: true, maxlength: 150 },
     body: { type: String, maxlength: 300 },
+    senderEmail: { type: String },
     read: { type: Boolean, default: false, index: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
