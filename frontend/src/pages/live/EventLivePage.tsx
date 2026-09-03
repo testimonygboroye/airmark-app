@@ -25,6 +25,7 @@ interface EventDetailResponse {
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
   countdownTargetAt: string | null;
+  countdownPausedRemainingMs: number | null;
 }
 
 export function EventLivePage() {
@@ -37,6 +38,7 @@ export function EventLivePage() {
   const [currentSegment, setCurrentSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [nextSegment, setNextSegment] = useState<RunOfShowSegmentRecord | null>(null);
   const [countdownTargetAt, setCountdownTargetAt] = useState<string | null>(null);
+  const [countdownPausedRemainingMs, setCountdownPausedRemainingMs] = useState<number | null>(null);
   const [signals, setSignals] = useState<SignalRecord[]>([]);
   const [latestTalkback, setLatestTalkback] = useState<TalkbackMessageRecord | null>(null);
   const [obsConnection, setObsConnection] = useState<ObsConnectionRecord>({
@@ -70,6 +72,7 @@ export function EventLivePage() {
     setCurrentSegment(eventData.currentSegment);
     setNextSegment(eventData.nextSegment);
     setCountdownTargetAt(eventData.countdownTargetAt);
+      setCountdownPausedRemainingMs((eventData as any).countdownPausedRemainingMs ?? null);
   }, [eventData]);
 
   const { hasPermission } = useTeamRole(event?.teamId);

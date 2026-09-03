@@ -24,10 +24,13 @@ export function TeamMembersPage() {
   const [editingName, setEditingName] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [renameMessage, setRenameMessage] = useState<string | null>(null);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   const [showTransfer, setShowTransfer] = useState(false);
-  const [transferTarget, setTransferTarget] = useState("");
+  const [transferEmail, setTransferEmail] = useState("");
+  const [transferConfirmText, setTransferConfirmText] = useState("");
   const [transferMessage, setTransferMessage] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
 
   const [showDeleteTeam, setShowDeleteTeam] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -51,14 +54,18 @@ export function TeamMembersPage() {
 
   const renameMutation = useMutation({
     mutationFn: async () => {
+      if (teamName.trim().length < 3) throw new Error("Team name must be at least 3 characters");
+      if (teamName.trim().length > 80) throw new Error("Team name can't exceed 80 characters");
       await apiClient.patch(`/teams/${teamId}`, { name: teamName });
     },
     onSuccess: () => {
       setEditingName(false);
       setRenameMessage("Team renamed.");
+      setRenameError(null);
       queryClient.invalidateQueries({ queryKey: ["myTeams"] });
       setTimeout(() => setRenameMessage(null), 3000);
     },
+    onError: (err) => setRenameError(getErrorMessage(err, (err as Error).message)),
   });
 
   const { data: members, isLoading: membersLoading } = useQuery({
@@ -120,18 +127,20 @@ export function TeamMembersPage() {
 
   const transferMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiClient.post<{ message: string }>(`/teams/${teamId}/transfer-ownership`, {
-        email: transferTarget,
-      });
+      const res = await apiClient.post<{ message: string }>(`/teams/${teamId}/transfer-ownership`, { email: transferEmail });
       return res.data.message;
     },
     onSuccess: (msg) => {
       setTransferMessage(msg);
+      setTransferError(null);
       setShowTransfer(false);
+      setTransferEmail("");
+      setTransferConfirmText("");
       queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
       queryClient.invalidateQueries({ queryKey: ["myTeams"] });
-      setTimeout(() => setTransferMessage(null), 5000);
+      setTimeout(() => setTransferMessage(null), 6000);
     },
+    onError: (err) => setTransferError(getErrorMessage(err)),
   });
 
   const deleteTeamMutation = useMutation({
@@ -146,24 +155,24 @@ export function TeamMembersPage() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         {editingName ? (
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Input label="" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="flex-1" />
-            <button
-              onClick={() => renameMutation.mutate()}
-              disabled={renameMutation.isPending || !teamName.trim()}
-              className="text-xs font-semibold text-accent-teal shrink-0"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => {
-                setEditingName(false);
-                setTeamName(currentTeam?.name ?? "");
-              }}
-              className="text-xs text-standby-slate shrink-0"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <Input label="" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="flex-1" />
+              <button onClick={() => renameMutation.mutate()} disabled={renameMutation.isPending} className="text-xs font-semibold text-accent-teal shrink-0">
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setEditingName(false);
+                  setTeamName(currentTeam?.name ?? "");
+                  setRenameError(null);
+                }}
+                className="text-xs text-standby-slate shrink-0"
+              >
+                Cancel
+              </button>
+            </div>
+            {renameError && <p className="text-xs text-signal-red">{renameError}</p>}
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
@@ -271,7 +280,7 @@ export function TeamMembersPage() {
           <Card className="mb-4">
             <p className="font-display text-sm font-semibold mb-1">Transfer ownership</p>
             <p className="text-xs text-standby-slate mb-3">
-              Hand Team Owner control to another member. You'll become Director on this team.
+              Works for a current member, a registered non-member, or someone with no Airmark account yet — they'll get an invite, and ownership moves automatically once accepted.
             </p>
             {!showTransfer ? (
               <Button variant="ghost" onClick={() => setShowTransfer(true)}>
@@ -279,29 +288,32 @@ export function TeamMembersPage() {
               </Button>
             ) : (
               <div className="flex flex-col gap-2">
-                <select
-                  className="text-sm rounded-lg border border-standby-slate/30 px-3 py-2.5 bg-white dark:bg-navy/60"
-                  value={transferTarget}
-                  onChange={(e) => setTransferTarget(e.target.value)}
-                >
-                  <option value="">Select new owner…</option>
-                  {members?.filter((m) => m.roleId.name !== "Team Owner").map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.userId.firstName} {m.userId.lastName}
-                    </option>
-                  ))}
-                </select>
+                <Input label="Email of new owner" type="email" value={transferEmail} onChange={(e) => setTransferEmail(e.target.value)} />
+                <p className="text-xs text-signal-red font-medium">
+                  Type "TRANSFER OWNERSHIP" below to confirm — this can't be easily undone.
+                </p>
+                <Input label="Confirmation" value={transferConfirmText} onChange={(e) => setTransferConfirmText(e.target.value)} />
+                {transferError && <p className="text-sm text-signal-red">{transferError}</p>}
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setShowTransfer(false)} className="flex-1">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowTransfer(false);
+                      setTransferEmail("");
+                      setTransferConfirmText("");
+                      setTransferError(null);
+                    }}
+                    className="flex-1"
+                  >
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => confirm("Transfer ownership? You will become a Director.") && transferMutation.mutate()}
+                    onClick={() => transferMutation.mutate()}
                     isLoading={transferMutation.isPending}
-                    disabled={!transferTarget}
+                    disabled={!transferEmail || transferConfirmText !== "TRANSFER OWNERSHIP"}
                     className="flex-1"
                   >
-                    Confirm
+                    Confirm transfer
                   </Button>
                 </div>
               </div>

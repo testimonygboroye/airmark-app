@@ -21,14 +21,9 @@ import { ObsAudioControls } from "@/components/live/ObsAudioControls";
 import { ObsReplayButton } from "@/components/live/ObsReplayButton";
 import { ObsFavoriteOverlays } from "@/components/live/ObsFavoriteOverlays";
 import { ObsIntroOutroSettings } from "@/components/live/ObsIntroOutroSettings";
+import { DirectorCameraTile } from "@/components/live/DirectorCameraTile";
 import { useCountdown } from "@/hooks/useCountdown";
-import type {
-  EventRecord,
-  CameraAssignmentRecord,
-  RunOfShowSegmentRecord,
-  SignalRecord,
-  ObsConnectionRecord,
-} from "@/types";
+import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord, SignalRecord, ObsConnectionRecord } from "@/types";
 
 interface Props {
   event: EventRecord;
@@ -44,41 +39,22 @@ interface Props {
 }
 
 export function DirectorLiveView({
-  event,
-  cameras,
-  eventId,
-  segments,
-  currentSegment,
-  nextSegment,
-  countdownTargetAt,
-  signals,
-  obsConnection,
+  event, cameras, eventId, segments, currentSegment, nextSegment,
+  countdownTargetAt, countdownPausedRemainingMs, signals, obsConnection,
 }: Props) {
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
   const isPaused = !countdownActive && !!countdownPausedRemainingMs;
 
-  const setLiveMutation = useMutation({
-    mutationFn: async (cameraId: string) => {
-      await apiClient.post(`/events/${eventId}/cameras/${cameraId}/live`, {
-        teamId: event.teamId,
-      });
-    },
-  });
-
   const startMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId });
-    },
+    mutationFn: async () => { await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId }); },
   });
-
   const endMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.post(`/events/${eventId}/end`, { teamId: event.teamId });
-    },
+    mutationFn: async () => { await apiClient.post(`/events/${eventId}/end`, { teamId: event.teamId }); },
   });
 
   const obsConnected = obsConnection.status === "connected";
+  const btnBase = "text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70";
 
   return (
     <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
@@ -86,37 +62,22 @@ export function DirectorLiveView({
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
       {obsConnected && (
-        <ObsFailsafeControls
-          eventId={eventId}
-          teamId={event.teamId}
-          scenes={obsConnection.scenes}
-          fallbackSceneName={obsConnection.fallbackSceneName}
-          streamStatus={obsConnection.streamStatus}
-          recordStatus={obsConnection.recordStatus}
-        />
+        <ObsFailsafeControls eventId={eventId} teamId={event.teamId} scenes={obsConnection.scenes} fallbackSceneName={obsConnection.fallbackSceneName} streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />
       )}
 
-      <header className="flex items-center justify-between px-4 py-4 border-b border-white/10 flex-wrap gap-2">
+      <header className="flex items-center justify-between px-4 py-4 border-b border-standby-slate/15 dark:border-white/10 flex-wrap gap-2">
         <div>
-          <p className="text-xs text-surface-light/50 uppercase tracking-wide">Director</p>
+          <p className="text-xs text-standby-slate dark:text-surface-light/50 uppercase tracking-wide">Director</p>
           <h1 className="font-display font-semibold">{event.title}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {event.status !== "live" && event.status !== "ended" && (
-            <button
-              onClick={() => startMutation.mutate()}
-              disabled={startMutation.isPending}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-signal-red"
-            >
+            <button onClick={() => startMutation.mutate()} disabled={startMutation.isPending} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-signal-red text-white">
               Start Event
             </button>
           )}
           {event.status === "live" && (
-            <button
-              onClick={() => endMutation.mutate()}
-              disabled={endMutation.isPending}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70"
-            >
+            <button onClick={() => endMutation.mutate()} disabled={endMutation.isPending} className={btnBase}>
               End Event
             </button>
           )}
@@ -124,115 +85,44 @@ export function DirectorLiveView({
           {obsConnected && (
             <>
               <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
-              <ObsWatermarkControls
-                eventId={eventId}
-                teamId={event.teamId}
-                items={obsConnection.sceneItems ?? []}
-                watermarkSceneItemId={obsConnection.watermarkSceneItemId}
-              />
-              <ObsCountdownOverlayControls
-                eventId={eventId}
-                teamId={event.teamId}
-                items={obsConnection.sceneItems ?? []}
-                countdownActive={countdownActive}
-              />
+              <ObsWatermarkControls eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} watermarkSceneItemId={obsConnection.watermarkSceneItemId} />
+              <ObsCountdownOverlayControls eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} countdownActive={countdownActive} />
               <ObsAudioControls eventId={eventId} teamId={event.teamId} />
               <ObsReplayButton eventId={eventId} teamId={event.teamId} />
-              <ObsIntroOutroSettings
-                eventId={eventId}
-                teamId={event.teamId}
-                scenes={obsConnection.scenes}
-                introSceneName={obsConnection.introSceneName}
-                introDurationSeconds={obsConnection.introDurationSeconds}
-                outroSceneName={obsConnection.outroSceneName}
-                outroDurationSeconds={obsConnection.outroDurationSeconds}
-              />
+              <ObsIntroOutroSettings eventId={eventId} teamId={event.teamId} scenes={obsConnection.scenes} introSceneName={obsConnection.introSceneName} introDurationSeconds={obsConnection.introDurationSeconds} outroSceneName={obsConnection.outroSceneName} outroDurationSeconds={obsConnection.outroDurationSeconds} />
             </>
           )}
           <TalkbackControls eventId={eventId} teamId={event.teamId} cameras={cameras} />
           <CountdownControls eventId={eventId} teamId={event.teamId} isActive={countdownActive} isPaused={isPaused} />
-          <button
-            onClick={() => navigate(-1)}
-            className="text-xs text-standby-slate dark:text-surface-light/60 font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15"
-          >
-            Exit
-          </button>
+          <button onClick={() => navigate(-1)} className={btnBase}>Exit</button>
         </div>
       </header>
 
-      {obsConnected && (
-        <ObsHealthMonitor streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />
-      )}
+      {obsConnected && <ObsHealthMonitor streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />}
 
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
       <div className="flex-1 px-4 py-6">
-        <p className="text-xs text-surface-light/50 uppercase tracking-wide mb-3">
-          Tap a camera to switch live
+        <p className="text-xs text-standby-slate dark:text-surface-light/50 uppercase tracking-wide mb-3">
+          Tap a camera to switch live — live video shows automatically once that operator opens Go Live
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {cameras.map((camera) => (
-            <button
-              key={camera._id}
-              onClick={() => setLiveMutation.mutate(camera._id)}
-              disabled={setLiveMutation.isPending}
-              className={`rounded-2xl p-5 text-left transition-all border-2 ${
-                camera.isLive
-                  ? "bg-signal-red border-signal-red"
-                  : "bg-white/5 border-white/10 active:bg-white/10"
-              }`}
-            >
-              <p className="font-display font-bold text-lg">{camera.label}</p>
-              {camera.operatorUserId ? (
-                <p className="text-xs mt-1 opacity-80">
-                  {camera.operatorUserId.firstName} {camera.operatorUserId.lastName}
-                </p>
-              ) : (
-                <p className="text-xs mt-1 opacity-50">Unassigned</p>
-              )}
-              <p className="text-xs font-bold mt-3 tracking-wide">
-                {camera.isLive ? "● LIVE" : "STANDBY"}
-              </p>
-            </button>
+            <DirectorCameraTile key={camera._id} camera={camera} eventId={eventId} teamId={event.teamId} />
           ))}
         </div>
       </div>
 
       {obsConnected && (
         <>
-          <ObsSceneSwitcher
-            eventId={eventId}
-            teamId={event.teamId}
-            scenes={obsConnection.scenes}
-            currentProgramScene={obsConnection.currentProgramScene}
-          />
-          <ObsTransitionControls
-            eventId={eventId}
-            teamId={event.teamId}
-            transitions={obsConnection.transitions ?? []}
-            currentTransition={obsConnection.currentTransition}
-            transitionDurationMs={obsConnection.transitionDurationMs}
-          />
-          <ObsFavoriteOverlays
-            eventId={eventId}
-            teamId={event.teamId}
-            items={obsConnection.sceneItems ?? []}
-            favorites={obsConnection.favoriteOverlays ?? []}
-          />
-          <ObsSceneItemsPanel
-            eventId={eventId}
-            teamId={event.teamId}
-            items={obsConnection.sceneItems ?? []}
-          />
+          <ObsSceneSwitcher eventId={eventId} teamId={event.teamId} scenes={obsConnection.scenes} currentProgramScene={obsConnection.currentProgramScene} />
+          <ObsTransitionControls eventId={eventId} teamId={event.teamId} transitions={obsConnection.transitions ?? []} currentTransition={obsConnection.currentTransition} transitionDurationMs={obsConnection.transitionDurationMs} />
+          <ObsSceneItemsPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
+          <ObsFavoriteOverlays eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} favorites={obsConnection.favoriteOverlays ?? []} />
         </>
       )}
 
-      <RunOfShowControls
-        eventId={eventId}
-        teamId={event.teamId}
-        segments={segments}
-        currentSegmentId={currentSegment?._id}
-      />
+      <RunOfShowControls eventId={eventId} teamId={event.teamId} segments={segments} currentSegmentId={currentSegment?._id} />
     </div>
   );
 }
