@@ -24,7 +24,6 @@ export function LoginPage() {
 
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
-  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -79,15 +78,6 @@ export function LoginPage() {
     }
   }
 
-  async function handleRequestRecovery() {
-    setError(null);
-    try {
-      const res = await apiClient.post("/auth/2fa/recovery/request", { pendingToken });
-      setRecoveryMessage(res.data.message);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    }
-  }
 
   if (pendingToken) {
     return (

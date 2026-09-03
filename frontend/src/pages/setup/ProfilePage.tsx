@@ -36,6 +36,7 @@ export function ProfilePage() {
   const [disablePassword, setDisablePassword] = useState("");
   const [disableMessage, setDisableMessage] = useState<string | null>(null);
   const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const [deleteText, setDeleteText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
@@ -44,18 +45,9 @@ export function ProfilePage() {
 
   const profileMutation = useMutation({
     mutationFn: async () => {
-      const nameErrors = [
-        validateName(firstName, true),
-        validateName(middleName, false),
-        validateName(lastName, true),
-      ];
+      const nameErrors = [validateName(firstName, true), validateName(middleName, false), validateName(lastName, true)];
       if (nameErrors.some((e) => e)) throw new Error(nameErrors.find((e) => e) as string);
-
-      const res = await apiClient.patch("/auth/me", {
-        firstName,
-        middleName: middleName || undefined,
-        lastName,
-      });
+      const res = await apiClient.patch("/auth/me", { firstName, middleName: middleName || undefined, lastName });
       return res.data.data;
     },
     onSuccess: (data) => {
@@ -124,9 +116,7 @@ export function ProfilePage() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.delete("/auth/me", {
-        data: { confirmationText: deleteText, password: deletePassword },
-      });
+      await apiClient.delete("/auth/me", { data: { confirmationText: deleteText, password: deletePassword } });
     },
     onSuccess: () => {
       disconnectSocket();
@@ -136,12 +126,28 @@ export function ProfilePage() {
     onError: (err) => setDeleteError(getErrorMessage(err)),
   });
 
+  function copyText(text: string, label: string) {
+    navigator.clipboard?.writeText(text);
+    setCopyFeedback(`${label} copied`);
+    setTimeout(() => setCopyFeedback(null), 2000);
+  }
+
   function downloadQrCode() {
     if (!qrCode) return;
     const link = document.createElement("a");
     link.href = qrCode;
     link.download = "airmark-2fa-qr-code.png";
     link.click();
+  }
+
+  function downloadBackupCodes() {
+    const blob = new Blob([backupCodes.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "airmark-backup-codes.txt";
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -157,9 +163,7 @@ export function ProfilePage() {
           <p className="text-xs text-standby-slate">Email: {user?.email} (contact support to change)</p>
           {profileError && <p className="text-sm text-signal-red">{profileError}</p>}
           {profileMessage && <p className="text-sm text-accent-teal">{profileMessage}</p>}
-          <Button onClick={() => profileMutation.mutate()} isLoading={profileMutation.isPending}>
-            Save changes
-          </Button>
+          <Button onClick={() => profileMutation.mutate()} isLoading={profileMutation.isPending}>Save changes</Button>
         </div>
       </Card>
 
@@ -171,11 +175,7 @@ export function ProfilePage() {
           <PasswordInput label="Confirm new password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} />
           {passwordError && <p className="text-sm text-signal-red">{passwordError}</p>}
           {passwordMessage && <p className="text-sm text-accent-teal">{passwordMessage}</p>}
-          <Button
-            onClick={() => passwordMutation.mutate()}
-            isLoading={passwordMutation.isPending}
-            disabled={!currentPassword || !newPassword}
-          >
+          <Button onClick={() => passwordMutation.mutate()} isLoading={passwordMutation.isPending} disabled={!currentPassword || !newPassword}>
             Change password
           </Button>
         </div>
@@ -183,28 +183,19 @@ export function ProfilePage() {
 
       <Card>
         <p className="font-display text-sm font-semibold mb-1">Two-factor authentication</p>
-        <p className="text-xs text-standby-slate mb-3">
-          Adds a second layer of protection — a code from your phone in addition to your password.
-        </p>
+        <p className="text-xs text-standby-slate mb-3">Adds a second layer of protection — a code from your phone in addition to your password.</p>
 
+        {copyFeedback && <p className="text-xs text-accent-teal mb-2">{copyFeedback}</p>}
         {twoFactorError && <p className="text-sm text-signal-red mb-3">{twoFactorError}</p>}
         {disableMessage && <p className="text-sm text-accent-teal mb-3">{disableMessage}</p>}
 
         {twoFactorStep === "idle" && (
           <div className="flex flex-col gap-3">
-            <Button onClick={() => start2FAMutation.mutate()} isLoading={start2FAMutation.isPending}>
-              Set up 2FA
-            </Button>
+            <Button onClick={() => start2FAMutation.mutate()} isLoading={start2FAMutation.isPending}>Set up 2FA</Button>
             <div className="pt-3 border-t border-standby-slate/15">
               <p className="text-xs text-standby-slate mb-2">Already have 2FA enabled and want to turn it off?</p>
               <PasswordInput label="Confirm password to disable" value={disablePassword} onChange={(e) => setDisablePassword(e.target.value)} />
-              <Button
-                variant="ghost"
-                onClick={() => disable2FAMutation.mutate()}
-                isLoading={disable2FAMutation.isPending}
-                disabled={!disablePassword}
-                className="mt-2"
-              >
+              <Button variant="ghost" onClick={() => disable2FAMutation.mutate()} isLoading={disable2FAMutation.isPending} disabled={!disablePassword} className="mt-2">
                 Disable 2FA
               </Button>
             </div>
@@ -213,41 +204,31 @@ export function ProfilePage() {
 
         {twoFactorStep === "setup" && qrCode && (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-standby-slate">
-              Scan this QR code with Google Authenticator, Authy, or any TOTP app.
-            </p>
+            <p className="text-xs text-standby-slate">Scan this QR code with Google Authenticator, Authy, or any TOTP app.</p>
             <img src={qrCode} alt="2FA QR code" className="w-40 h-40 mx-auto rounded-lg bg-white p-2" />
-            <button onClick={downloadQrCode} className="text-xs text-accent-teal font-medium text-center">
-              Download QR code
-            </button>
-            <p className="text-xs text-standby-slate text-center">
-              Or enter manually: <span className="font-mono">{manualSecret}</span>
-            </p>
-            <input
-              placeholder="Enter 6-digit code"
-              value={totpCode}
-              onChange={(e) => setTotpCode(e.target.value)}
-              className="text-sm rounded-lg border border-standby-slate/30 px-3 py-2.5 text-center tracking-widest"
-              maxLength={6}
-            />
-            <Button onClick={() => confirm2FAMutation.mutate()} isLoading={confirm2FAMutation.isPending} disabled={totpCode.length !== 6}>
-              Confirm & Enable
-            </Button>
+            <button onClick={downloadQrCode} className="text-xs text-accent-teal font-medium text-center">Download QR code</button>
+            <div className="flex items-center justify-center gap-2 text-xs text-standby-slate">
+              <span className="font-mono">{manualSecret}</span>
+              <button onClick={() => copyText(manualSecret ?? "", "Secret code")} className="text-accent-teal font-medium">Copy</button>
+            </div>
+            <input placeholder="Enter 6-digit code" value={totpCode} onChange={(e) => setTotpCode(e.target.value)} className="text-sm rounded-lg border border-standby-slate/30 px-3 py-2.5 text-center tracking-widest" maxLength={6} />
+            <Button onClick={() => confirm2FAMutation.mutate()} isLoading={confirm2FAMutation.isPending} disabled={totpCode.length !== 6}>Confirm & Enable</Button>
           </div>
         )}
 
         {twoFactorStep === "backup" && (
           <div className="flex flex-col gap-3">
             <div className="rounded-lg bg-accent-teal/10 border border-accent-teal/30 px-4 py-3 text-sm text-accent-teal">
-              2FA enabled. Save these backup codes somewhere safe — each works once if you lose access to your
-              authenticator app. You can also recover via email from the login screen if you lose both.
+              2FA enabled. Save these backup codes somewhere safe — each works once if you lose access to your authenticator app.
             </div>
             <div className="grid grid-cols-2 gap-2 font-mono text-xs">
               {backupCodes.map((code) => (
-                <div key={code} className="bg-standby-slate/10 rounded px-2 py-1.5 text-center">
-                  {code}
-                </div>
+                <div key={code} className="bg-standby-slate/10 rounded px-2 py-1.5 text-center">{code}</div>
               ))}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => copyText(backupCodes.join("\n"), "Backup codes")} className="flex-1">Copy all</Button>
+              <Button variant="ghost" onClick={downloadBackupCodes} className="flex-1">Download</Button>
             </div>
             <Button onClick={() => setTwoFactorStep("idle")}>Done</Button>
           </div>
@@ -256,32 +237,19 @@ export function ProfilePage() {
 
       <Card className="border-signal-red/30">
         <p className="font-display text-sm font-semibold text-signal-red mb-1">Danger zone</p>
-        <p className="text-xs text-standby-slate mb-3">
-          Permanently delete your account. If you own any team with other members, remove them first.
-        </p>
+        <p className="text-xs text-standby-slate mb-3">Permanently delete your account. If you own any team with other members, remove them first.</p>
 
         {!showDelete ? (
-          <Button variant="ghost" onClick={() => setShowDelete(true)} className="text-signal-red">
-            Delete my account
-          </Button>
+          <Button variant="ghost" onClick={() => setShowDelete(true)} className="text-signal-red">Delete my account</Button>
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-standby-slate">
-              Type <strong>DELETE MY ACCOUNT</strong> to confirm.
-            </p>
+            <p className="text-xs text-standby-slate">Type <strong>DELETE MY ACCOUNT</strong> to confirm.</p>
             <Input label="Confirmation" value={deleteText} onChange={(e) => setDeleteText(e.target.value)} />
             <PasswordInput label="Password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} />
             {deleteError && <p className="text-sm text-signal-red">{deleteError}</p>}
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setShowDelete(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button
-                onClick={() => deleteAccountMutation.mutate()}
-                isLoading={deleteAccountMutation.isPending}
-                disabled={deleteText !== "DELETE MY ACCOUNT" || !deletePassword}
-                className="flex-1 !bg-signal-red"
-              >
+              <Button variant="ghost" onClick={() => setShowDelete(false)} className="flex-1">Cancel</Button>
+              <Button onClick={() => deleteAccountMutation.mutate()} isLoading={deleteAccountMutation.isPending} disabled={deleteText !== "DELETE MY ACCOUNT" || !deletePassword} className="flex-1 !bg-signal-red">
                 Permanently delete
               </Button>
             </div>

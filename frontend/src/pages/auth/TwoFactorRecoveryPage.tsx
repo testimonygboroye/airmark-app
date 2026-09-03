@@ -3,6 +3,8 @@ import { Link, useSearchParams, useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/brand/Logo";
 
@@ -10,6 +12,9 @@ export function TwoFactorRecoveryPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +23,7 @@ export function TwoFactorRecoveryPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post("/auth/2fa/recovery/confirm", { token });
+      const res = await apiClient.post("/auth/2fa/recovery/confirm", { token, email, password });
       setMessage(res.data.message);
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
@@ -32,24 +37,25 @@ export function TwoFactorRecoveryPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-navy px-4">
       <Card className="max-w-md w-full text-center">
         <Logo />
-        <h1 className="font-display text-xl font-semibold mt-6 mb-2">Account recovery</h1>
+        <h1 className="font-display text-xl font-semibold mt-6 mb-2">Confirm account recovery</h1>
         {message ? (
           <p className="text-sm text-accent-teal">{message} Redirecting to login…</p>
         ) : (
           <>
-            <p className="text-sm text-standby-slate mb-6">
-              Click below to disable two-factor authentication on your account. You'll be able to log in with just
-              your password and set up 2FA again afterward.
+            <p className="text-sm text-standby-slate mb-6 text-left">
+              Re-enter your email and password to confirm disabling two-factor authentication.
             </p>
-            {error && <p className="text-sm text-signal-red mb-4">{error}</p>}
-            <Button onClick={handleConfirm} isLoading={isLoading}>
-              Disable two-factor authentication
-            </Button>
+            <div className="flex flex-col gap-4 text-left">
+              <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <PasswordInput label="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              {error && <p className="text-sm text-signal-red">{error}</p>}
+              <Button onClick={handleConfirm} isLoading={isLoading} disabled={!email || !password}>
+                Disable two-factor authentication
+              </Button>
+            </div>
           </>
         )}
-        <Link to="/login" className="inline-block mt-6 text-accent-teal font-medium text-sm">
-          Back to login
-        </Link>
+        <Link to="/login" className="inline-block mt-6 text-accent-teal font-medium text-sm">Back to login</Link>
       </Card>
     </div>
   );

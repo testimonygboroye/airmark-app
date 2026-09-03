@@ -11,6 +11,7 @@ import { VerifyEmailPage } from "@/pages/auth/VerifyEmailPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { TwoFactorRecoveryPage } from "@/pages/auth/TwoFactorRecoveryPage";
+import { TwoFactorRecoveryRequestPage } from "@/pages/auth/TwoFactorRecoveryRequestPage";
 import { DashboardPage } from "@/pages/setup/DashboardPage";
 import { CreateTeamPage } from "@/pages/setup/CreateTeamPage";
 import { EventsListPage } from "@/pages/setup/EventsListPage";
@@ -51,6 +52,7 @@ export function AppRouter() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/2fa-recovery" element={<TwoFactorRecoveryPage />} />
+          <Route path="/2fa-recovery-request" element={<TwoFactorRecoveryRequestPage />} />
         </Route>
 
         <Route
