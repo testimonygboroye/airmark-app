@@ -3,9 +3,9 @@ import { Types } from "mongoose";
 import crypto from "crypto";
 import { TeamInvite } from "../models/TeamInvite.model";
 import { Membership } from "../models/Membership.model";
+import { Role } from "../models/Role.model";
 import { User } from "../models/User.model";
 import { Team } from "../models/Team.model";
-import { Role } from "../models/Role.model";
 import { generateSecureToken } from "../utils/jwt.util";
 import { sendTeamInviteEmail } from "../services/email.service";
 import { createNotification } from "../services/notification.service";
@@ -13,44 +13,51 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { env } from "../config/env";
 
+const SINGULAR_ROLES = ["Team Owner", "Director"];
+
+async function assertRoleCapacity(teamId: string, roleId: string) {
+  const role = await Role.findById(roleId);
+  if (role && SINGULAR_ROLES.includes(role.name)) {
+    const existing = await Membership.findOne({ teamId, roleId, status: "active" });
+    if (existing) {
+      throw ApiError.conflict(`This team already has a ${role.name} — only one is allowed at a time.`);
+    }
+  }
+}
+
 export const createInvite = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const teamId = req.params.teamId as string;
   const { email, roleId } = req.body;
   const invitedBy = new Types.ObjectId(req.user!.id);
 
-  const [team, role, inviter] = await Promise.all([
-    Team.findById(teamId),
-    Role.findOne({ _id: roleId, teamId }),
-    User.findById(invitedBy),
-  ]);
+  const [team, role, inviter] = await Promise.all([Team.findById(teamId), Role.findOne({ _id: roleId, teamId }), User.findById(invitedBy)]);
   if (!team) throw ApiError.notFound("Team not found");
   if (!role) throw ApiError.badRequest("Role not found for this team");
 
+  await assertRoleCapacity(teamId, roleId);
+
   const existingUser = await User.findOne({ email, isEmailVerified: true });
 
+  // Same person + same role combo is blocked (no point inviting twice for
+  // the identical role); same person with a DIFFERENT role is allowed —
+  // e.g. already Team Owner, now also invited as Operator for a second device.
   if (existingUser) {
-    const alreadyMember = await Membership.findOne({ userId: existingUser._id, teamId });
-    if (alreadyMember) throw ApiError.conflict("This person is already a member of the team");
+    const alreadyHasThisRole = await Membership.findOne({ userId: existingUser._id, teamId, roleId });
+    if (alreadyHasThisRole) throw ApiError.conflict("This person already holds that exact role on the team");
   }
 
-  const existingInvite = await TeamInvite.findOne({ teamId, email, status: "pending" });
-  if (existingInvite) throw ApiError.conflict("An invite is already pending for this email");
+  const existingInvite = await TeamInvite.findOne({ teamId, email, roleId, status: "pending" });
+  if (existingInvite) throw ApiError.conflict("An invite for this exact role is already pending for this email");
 
   const { raw, hash } = generateSecureToken();
-  await TeamInvite.create({
-    teamId, email, roleId, invitedBy, tokenHash: hash,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
-
+  await TeamInvite.create({ teamId, email, roleId, invitedBy, tokenHash: hash, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
   const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : "A team director";
 
   if (existingUser) {
     await createNotification({
-      userId: existingUser._id,
-      teamId,
-      type: "system",
-      title: `Invitation to join ${team.name}`,
-      body: `${inviterName} invited you as ${role.name}. Open Invites to respond.`,
+      userId: existingUser._id, teamId, type: "system",
+      title: `Invitation to join ${team.name} as ${role.name}`,
+      body: `${inviterName} invited you. Open Invites to respond.`,
     });
     res.status(201).json({ success: true, message: `${existingUser.firstName} was notified in-app and must accept the invite themselves.`, data: { type: "notified_in_app" } });
     return;
@@ -64,8 +71,7 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
 export const checkInvite = asyncHandler(async (req: Request, res: Response) => {
   const token = req.params.token as string;
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-  const invite = await TeamInvite.findOne({ tokenHash, status: "pending", expiresAt: { $gt: new Date() } })
-    .populate("teamId", "name").populate("roleId", "name");
+  const invite = await TeamInvite.findOne({ tokenHash, status: "pending", expiresAt: { $gt: new Date() } }).populate("teamId", "name").populate("roleId", "name");
   if (!invite) throw ApiError.notFound("This invitation is invalid or has expired");
   res.json({ success: true, data: { teamName: (invite.teamId as any).name, roleName: (invite.roleId as any).name, email: invite.email } });
 });
@@ -101,27 +107,20 @@ export const acceptMyInvite = asyncHandler(async (req: Request, res: Response) =
   if (!invite) throw ApiError.notFound("Invite not found or already responded to");
   if (invite.expiresAt < new Date()) throw ApiError.badRequest("This invite has expired");
 
-  let membership = await Membership.findOne({ userId: user._id, teamId: invite.teamId });
-  if (!membership) {
-    membership = await Membership.create({
-      userId: user._id, teamId: invite.teamId, roleId: invite.roleId,
-      status: "active", createdBy: invite.invitedBy,
-    });
-  } else {
-    membership.roleId = invite.roleId;
-    await membership.save();
+  await assertRoleCapacity(invite.teamId.toString(), invite.roleId.toString());
+
+  const alreadyHasThisRole = await Membership.findOne({ userId: user._id, teamId: invite.teamId, roleId: invite.roleId });
+  if (!alreadyHasThisRole) {
+    await Membership.create({ userId: user._id, teamId: invite.teamId, roleId: invite.roleId, status: "active", createdBy: invite.invitedBy });
   }
 
   if (invite.isOwnershipTransfer && invite.previousOwnerMembershipId) {
     const directorRole = await Role.findOne({ teamId: invite.teamId, name: "Director", isSystemRole: true });
-    if (directorRole) {
-      await Membership.findByIdAndUpdate(invite.previousOwnerMembershipId, { roleId: directorRole._id });
-    }
+    if (directorRole) await Membership.findByIdAndUpdate(invite.previousOwnerMembershipId, { roleId: directorRole._id });
   }
 
   invite.status = "accepted";
   await invite.save();
-
   res.json({ success: true, message: invite.isOwnershipTransfer ? "You are now Team Owner." : "You've joined the team." });
 });
 

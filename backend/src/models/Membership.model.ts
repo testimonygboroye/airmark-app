@@ -28,6 +28,5 @@ const membershipSchema = new Schema<IMembership>(
   { timestamps: true }
 );
 
-membershipSchema.index({ userId: 1, teamId: 1 }, { unique: true });
 
 export const Membership = model<IMembership>("Membership", membershipSchema);

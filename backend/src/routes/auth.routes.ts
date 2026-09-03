@@ -4,27 +4,16 @@ import { validate } from "../middleware/validate.middleware";
 import { requireAuth } from "../middleware/auth.middleware";
 import { authRateLimiter } from "../middleware/rateLimiter.middleware";
 import {
-  registerSchema,
-  loginSchema,
-  verify2FALoginSchema,
-  verifyEmailSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  updateProfileSchema,
-  changePasswordSchema,
-  confirm2FASchema,
-  disable2FASchema,
-  resendVerificationSchema,
-  request2FARecoverySchema,
-  confirm2FARecoverySchema,
-  deleteAccountSchema,
+  registerSchema, loginSchema, verify2FALoginSchema, verifyEmailSchema, resendVerificationSchema,
+  forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, changePasswordSchema,
+  confirm2FASchema, disable2FASchema, request2FARecoverySchema, confirm2FARecoverySchema, deleteAccountSchema,
 } from "../validators/auth.validator";
 
 const router = Router();
 
 router.post("/register", authRateLimiter, validate(registerSchema), authController.register);
-router.post("/verify-email", authRateLimiter, validate(verifyEmailSchema), authController.verifyEmail);
 router.post("/resend-verification", authRateLimiter, validate(resendVerificationSchema), authController.resendVerification);
+router.post("/verify-email", authRateLimiter, validate(verifyEmailSchema), authController.verifyEmail);
 router.post("/login", authRateLimiter, validate(loginSchema), authController.login);
 router.post("/2fa/login-verify", authRateLimiter, validate(verify2FALoginSchema), authController.verify2FALogin);
 router.post("/2fa/recovery/request", authRateLimiter, validate(request2FARecoverySchema), authController.request2FARecovery);
