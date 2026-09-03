@@ -25,7 +25,7 @@ interface EventDetailResponse {
   currentSegment: RunOfShowSegmentRecord | null;
   nextSegment: RunOfShowSegmentRecord | null;
   countdownTargetAt: string | null;
-  countdownPausedRemainingMs: number | null;
+  countdownPausedRemainingMs?: number | null;
 }
 
 export function EventLivePage() {
@@ -72,7 +72,7 @@ export function EventLivePage() {
     setCurrentSegment(eventData.currentSegment);
     setNextSegment(eventData.nextSegment);
     setCountdownTargetAt(eventData.countdownTargetAt);
-      setCountdownPausedRemainingMs((eventData as any).countdownPausedRemainingMs ?? null);
+    setCountdownPausedRemainingMs(eventData.countdownPausedRemainingMs ?? null);
   }, [eventData]);
 
   const { hasPermission } = useTeamRole(event?.teamId);
@@ -120,8 +120,16 @@ export function EventLivePage() {
     function handleSegmentsUpdated(payload: { eventId: string; segments: RunOfShowSegmentRecord[] }) {
       if (payload.eventId === eventId) setSegments(payload.segments);
     }
-    function handleCountdownUpdate(payload: { eventId: string; targetAt: string | null }) {
-      if (payload.eventId === eventId) setCountdownTargetAt(payload.targetAt);
+    function handleCountdownUpdate(payload: {
+      eventId: string;
+      targetAt: string | null;
+      paused?: boolean;
+      pausedRemainingMs?: number;
+    }) {
+      if (payload.eventId === eventId) {
+        setCountdownTargetAt(payload.targetAt);
+        setCountdownPausedRemainingMs(payload.paused ? payload.pausedRemainingMs ?? null : null);
+      }
     }
     function handleSignalNew(payload: { eventId: string; signal: SignalRecord }) {
       if (payload.eventId === eventId) setSignals((prev) => [payload.signal, ...prev]);
@@ -136,16 +144,9 @@ export function EventLivePage() {
         setLatestTalkback(payload.message);
       }
     }
-    /**
-     * This is the fix — previously nothing updated event.status after
-     * Start/End Event, so the buttons appeared to "do nothing" even
-     * though the request succeeded on the server every time.
-     */
     function handleEventStatusUpdate(payload: {
       eventId: string;
       status: "scheduled" | "live" | "ended";
-      actualStartAt?: string;
-      endedAt?: string;
     }) {
       if (payload.eventId === eventId) {
         setEvent((prev) => (prev ? { ...prev, status: payload.status } : prev));
@@ -168,7 +169,9 @@ export function EventLivePage() {
       }
     }
     function handleObsSceneChanged(payload: { eventId: string; currentProgramScene: string }) {
-      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, currentProgramScene: payload.currentProgramScene }));
+      }
     }
     function handleObsSceneItemsUpdate(payload: any) {
       if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, sceneItems: payload.items }));
@@ -178,13 +181,17 @@ export function EventLivePage() {
         setObsConnection((prev) => ({
           ...prev,
           sceneItems: (prev.sceneItems ?? []).map((item) =>
-            item.sceneItemId === payload.sceneItemId ? { ...item, sceneItemEnabled: payload.sceneItemEnabled } : item
+            item.sceneItemId === payload.sceneItemId
+              ? { ...item, sceneItemEnabled: payload.sceneItemEnabled }
+              : item
           ),
         }));
       }
     }
     function handleObsTransitionChanged(payload: { eventId: string; transitionName: string }) {
-      if (payload.eventId === eventId) setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
+      if (payload.eventId === eventId) {
+        setObsConnection((prev) => ({ ...prev, currentTransition: payload.transitionName }));
+      }
     }
 
     socket.on("tally:update", handleTallyUpdate);
@@ -253,6 +260,7 @@ export function EventLivePage() {
         currentSegment={currentSegment}
         nextSegment={nextSegment}
         countdownTargetAt={countdownTargetAt}
+        countdownPausedRemainingMs={countdownPausedRemainingMs}
         signals={signals}
         obsConnection={obsConnection}
       />
