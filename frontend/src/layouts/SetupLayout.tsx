@@ -5,6 +5,7 @@ import { NotificationBell } from "@/components/ui/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { FirstVisitHelpModal } from "@/components/ui/FirstVisitHelpModal";
+import { BackToTopButton } from "@/components/ui/BackToTopButton";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
@@ -170,6 +171,7 @@ export function SetupLayout() {
 
       <BottomNav />
       <FirstVisitHelpModal />
+      <BackToTopButton />
     </div>
   );
 }
