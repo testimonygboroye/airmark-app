@@ -106,7 +106,7 @@ export function DirectorLiveView({
         <p className="text-xs text-standby-slate dark:text-surface-light/50 uppercase tracking-wide mb-3">
           Tap a camera to switch live — live video shows automatically once that operator opens Go Live
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {cameras.map((camera) => (
             <DirectorCameraTile key={camera._id} camera={camera} eventId={eventId} teamId={event.teamId} />
           ))}

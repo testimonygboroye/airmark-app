@@ -17,34 +17,29 @@ interface Props {
 }
 
 export function OperatorLiveView({
-  camera, cameras, currentSegment, nextSegment, countdownTargetAt, eventId, teamId, latestTalkback,
+  camera, currentSegment, nextSegment, countdownTargetAt, eventId, teamId, latestTalkback,
 }: Props) {
-  const liveCamera = cameras.find((c) => c.isLive);
-
   return (
-    <div className={`min-h-screen flex flex-col relative transition-colors duration-300 ${camera.isLive ? "bg-signal-red text-white" : "bg-navy text-surface-light"}`}>
+    <div className="h-[calc(100dvh-113px)] flex flex-col overflow-hidden bg-navy text-surface-light">
       <CountdownOverlay targetAt={countdownTargetAt} />
       <TalkbackBanner message={latestTalkback} />
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-5">
-        <p className="text-sm font-medium opacity-70 tracking-widest uppercase">{camera.label} (You)</p>
-        <h1 className="font-display text-5xl font-bold tracking-tight">{camera.isLive ? "LIVE" : "STANDBY"}</h1>
-
-        <OperatorCameraPreview eventId={eventId} teamId={teamId} />
-
-        {!camera.isLive && liveCamera && (
-          <div className="px-5 py-3 rounded-xl bg-white/10 backdrop-blur-sm">
-            <p className="text-xs opacity-60 text-center">Currently live</p>
-            <p className="font-display font-semibold text-center">{liveCamera.label}</p>
-          </div>
-        )}
-      </div>
-
-      <OperatorActionDock eventId={eventId} teamId={teamId} cameraId={camera._id} />
-      <p className="pb-28 text-xs opacity-40 px-6 text-center">
-        Wait for this screen to show LIVE before repositioning your camera.
+      {/* Camera identification — only text between header and video */}
+      <p className="text-xs font-medium opacity-70 tracking-widest uppercase text-center py-2 shrink-0">
+        {camera.label} (You)
       </p>
+
+      <OperatorCameraPreview eventId={eventId} teamId={teamId} />
+
+      {/* Icons + status dot row — the only thing between video and bottom nav */}
+      <div className={`shrink-0 flex items-center justify-between px-4 py-2.5 ${camera.isLive ? "bg-signal-red" : "bg-navy"}`}>
+        <div className="flex items-center gap-1.5">
+          <span className={`w-3 h-3 rounded-full ${camera.isLive ? "bg-white" : "bg-white/30"}`} />
+          <span className="text-[10px] font-bold tracking-wide">{camera.isLive ? "LIVE" : "STANDBY"}</span>
+        </div>
+        <OperatorActionDock eventId={eventId} teamId={teamId} cameraId={camera._id} inline />
+      </div>
     </div>
   );
 }

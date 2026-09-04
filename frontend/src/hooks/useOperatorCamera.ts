@@ -5,9 +5,12 @@ import { createPeerConnection } from "@/lib/webrtc";
 export function useOperatorCamera(eventId: string, teamId: string, active: boolean) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [hasCamera, setHasCamera] = useState(false);
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number }>({ min: 1, max: 1, step: 0.1 });
 
   useEffect(() => {
     if (!active) return;
@@ -15,26 +18,29 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
 
     async function start() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
         streamRef.current = stream;
+        const track = stream.getVideoTracks()[0];
+        trackRef.current = track;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
         setHasCamera(true);
 
-        const socket = getSocket();
-        socket?.emit("webrtc:camera-ready", { eventId, teamId });
+        // Zoom via MediaStreamTrack capabilities — supported on most
+        // Android Chrome devices, not on iOS Safari (a real platform gap,
+        // not a bug we can fix from our side).
+        const capabilities = (track.getCapabilities?.() as any) || {};
+        if (capabilities.zoom) {
+          setZoomSupported(true);
+          setZoomRange({ min: capabilities.zoom.min, max: capabilities.zoom.max, step: capabilities.zoom.step || 0.1 });
+        }
+
+        getSocket()?.emit("webrtc:camera-ready", { eventId, teamId });
       } catch (err: any) {
-        setCameraError(
-          err?.name === "NotAllowedError"
-            ? "Camera access denied — allow camera permission to show your preview."
-            : "Couldn't access your camera on this device."
-        );
+        setCameraError(err?.name === "NotAllowedError" ? "Camera access denied — allow camera permission to show your preview." : "Couldn't access your camera on this device.");
       }
     }
     start();
@@ -46,9 +52,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
       const pc = createPeerConnection();
       streamRef.current.getTracks().forEach((track) => pc.addTrack(track, streamRef.current!));
       pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket?.emit("webrtc:ice-candidate", { toUserId: payload.fromUserId, eventId, candidate: e.candidate });
-        }
+        if (e.candidate) socket?.emit("webrtc:ice-candidate", { toUserId: payload.fromUserId, eventId, candidate: e.candidate });
       };
       await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
       const answer = await pc.createAnswer();
@@ -56,17 +60,12 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
       socket?.emit("webrtc:answer", { toUserId: payload.fromUserId, eventId, sdp: answer });
       peersRef.current.set(payload.fromUserId, pc);
     }
-
     function handleIceCandidate(payload: { fromUserId: string; eventId: string; candidate: RTCIceCandidateInit }) {
       if (payload.eventId !== eventId) return;
-      const pc = peersRef.current.get(payload.fromUserId);
-      pc?.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
+      peersRef.current.get(payload.fromUserId)?.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
     }
-
     function handleRequestCameras(payload: { teamId: string }) {
-      if (payload.teamId === teamId && streamRef.current) {
-        socket?.emit("webrtc:camera-ready", { eventId, teamId });
-      }
+      if (payload.teamId === teamId && streamRef.current) socket?.emit("webrtc:camera-ready", { eventId, teamId });
     }
 
     socket?.on("webrtc:offer", handleOffer);
@@ -86,5 +85,14 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     };
   }, [eventId, teamId, active]);
 
-  return { localVideoRef, cameraError, hasCamera };
+  async function setZoom(value: number) {
+    if (!trackRef.current) return;
+    try {
+      await trackRef.current.applyConstraints({ advanced: [{ zoom: value } as any] });
+    } catch {
+      /* device doesn't actually honor it despite reporting support — silently ignore */
+    }
+  }
+
+  return { localVideoRef, cameraError, hasCamera, zoomSupported, zoomRange, setZoom };
 }
