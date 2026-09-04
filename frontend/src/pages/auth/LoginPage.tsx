@@ -78,7 +78,6 @@ export function LoginPage() {
     }
   }
 
-
   if (pendingToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-navy px-4">
@@ -94,7 +93,7 @@ export function LoginPage() {
               value={totpCode}
               onChange={(e) => setTotpCode(e.target.value)}
               maxLength={20}
-              className="text-sm rounded-lg border border-standby-slate/30 px-4 py-3 text-center tracking-widest bg-white dark:bg-navy/60"
+              className="text-sm rounded-lg border border-standby-slate/30 px-4 py-3 text-center tracking-widest bg-white dark:bg-navy/60 text-navy dark:text-surface-light"
             />
             {error && <p className="text-sm text-signal-red">{error}</p>}
             <Button type="submit" isLoading={isLoading} disabled={totpCode.length < 6}>
@@ -103,13 +102,9 @@ export function LoginPage() {
           </form>
 
           <div className="mt-4 text-center">
-            {recoveryMessage ? (
-              <p className="text-xs text-accent-teal">{recoveryMessage}</p>
-            ) : (
-              <button onClick={handleRequestRecovery} className="text-xs text-standby-slate underline">
-                Lost access to your authenticator app?
-              </button>
-            )}
+            <Link to="/2fa-recovery-request" className="text-xs text-standby-slate underline">
+              Lost access to your authenticator app?
+            </Link>
           </div>
         </Card>
       </div>
@@ -130,8 +125,19 @@ export function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <PasswordInput label="Password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          <Input
+            label="Email"
+            type="email"
+            required
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <PasswordInput
+            label="Password"
+            required
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+          />
 
           {error && <p className="text-sm text-signal-red">{error}</p>}
 
