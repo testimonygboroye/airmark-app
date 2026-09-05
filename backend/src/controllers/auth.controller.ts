@@ -333,3 +333,12 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   clearRefreshCookie(res);
   res.json({ success: true, message: "Account permanently deleted" });
 });
+
+export const updateZoomPreference = asyncHandler(async (req: Request, res: Response) => {
+  const { maxZoomPreference } = req.body;
+  const user = await User.findById(req.user!.id);
+  if (!user) throw ApiError.notFound("User not found");
+  user.maxZoomPreference = maxZoomPreference;
+  await user.save();
+  res.json({ success: true, data: { maxZoomPreference: user.maxZoomPreference } });
+});

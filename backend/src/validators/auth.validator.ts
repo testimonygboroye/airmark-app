@@ -50,3 +50,7 @@ export const confirm2FARecoverySchema = z.object({
 });
 
 export const deleteAccountSchema = z.object({ body: z.object({ confirmationText: z.string().min(1), password: z.string().min(1) }) });
+
+export const updateZoomPreferenceSchema = z.object({
+  body: z.object({ maxZoomPreference: z.number().min(1).max(50) }),
+});
