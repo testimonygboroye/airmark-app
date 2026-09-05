@@ -4,9 +4,21 @@ import { validate } from "../middleware/validate.middleware";
 import { requireAuth } from "../middleware/auth.middleware";
 import { authRateLimiter } from "../middleware/rateLimiter.middleware";
 import {
-  registerSchema, loginSchema, verify2FALoginSchema, verifyEmailSchema, resendVerificationSchema,
-  forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, changePasswordSchema,
-  confirm2FASchema, disable2FASchema, request2FARecoverySchema, confirm2FARecoverySchema, deleteAccountSchema,
+  registerSchema,
+  loginSchema,
+  verify2FALoginSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  confirm2FASchema,
+  disable2FASchema,
+  request2FARecoverySchema,
+  confirm2FARecoverySchema,
+  deleteAccountSchema,
+  updateZoomPreferenceSchema,
 } from "../validators/auth.validator";
 
 const router = Router();
