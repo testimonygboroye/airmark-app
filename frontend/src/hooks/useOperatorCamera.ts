@@ -29,9 +29,6 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
         setHasCamera(true);
 
-        // Zoom via MediaStreamTrack capabilities — supported on most
-        // Android Chrome devices, not on iOS Safari (a real platform gap,
-        // not a bug we can fix from our side).
         const capabilities = (track.getCapabilities?.() as any) || {};
         if (capabilities.zoom) {
           setZoomSupported(true);
@@ -49,10 +46,18 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
 
     async function handleOffer(payload: { fromUserId: string; sdp: RTCSessionDescriptionInit; eventId: string }) {
       if (payload.eventId !== eventId || !streamRef.current) return;
+      const existing = peersRef.current.get(payload.fromUserId);
+      existing?.close();
+
       const pc = createPeerConnection();
       streamRef.current.getTracks().forEach((track) => pc.addTrack(track, streamRef.current!));
       pc.onicecandidate = (e) => {
         if (e.candidate) socket?.emit("webrtc:ice-candidate", { toUserId: payload.fromUserId, eventId, candidate: e.candidate });
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+          peersRef.current.delete(payload.fromUserId);
+        }
       };
       await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
       const answer = await pc.createAnswer();
@@ -60,10 +65,12 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
       socket?.emit("webrtc:answer", { toUserId: payload.fromUserId, eventId, sdp: answer });
       peersRef.current.set(payload.fromUserId, pc);
     }
+
     function handleIceCandidate(payload: { fromUserId: string; eventId: string; candidate: RTCIceCandidateInit }) {
       if (payload.eventId !== eventId) return;
       peersRef.current.get(payload.fromUserId)?.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
     }
+
     function handleRequestCameras(payload: { teamId: string }) {
       if (payload.teamId === teamId && streamRef.current) socket?.emit("webrtc:camera-ready", { eventId, teamId });
     }
@@ -72,8 +79,16 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     socket?.on("webrtc:ice-candidate", handleIceCandidate);
     socket?.on("webrtc:request-cameras", handleRequestCameras);
 
+    // Periodic re-announcement — a director whose connection dropped and
+    // is retrying (see useDirectorCameraStream) needs this to know a
+    // camera is still available, without waiting for a manual page reload.
+    const heartbeat = setInterval(() => {
+      if (streamRef.current) socket?.emit("webrtc:camera-ready", { eventId, teamId });
+    }, 8000);
+
     return () => {
       cancelled = true;
+      clearInterval(heartbeat);
       socket?.off("webrtc:offer", handleOffer);
       socket?.off("webrtc:ice-candidate", handleIceCandidate);
       socket?.off("webrtc:request-cameras", handleRequestCameras);
@@ -90,7 +105,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     try {
       await trackRef.current.applyConstraints({ advanced: [{ zoom: value } as any] });
     } catch {
-      /* device doesn't actually honor it despite reporting support — silently ignore */
+      /* device reports support but doesn't honor it — silently ignore */
     }
   }
 

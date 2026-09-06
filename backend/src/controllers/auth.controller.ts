@@ -201,7 +201,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   if (!user) throw ApiError.notFound("User not found");
   res.json({
     success: true,
-    data: { id: user._id, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName, email: user.email, isSuperAdmin: user.isSuperAdmin, isEmailVerified: user.isEmailVerified, twoFactorEnabled: user.twoFactorEnabled },
+    data: { id: user._id, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName, email: user.email, isSuperAdmin: user.isSuperAdmin, isEmailVerified: user.isEmailVerified, twoFactorEnabled: user.twoFactorEnabled, maxZoomPreference: user.maxZoomPreference ?? 10 },
   });
 });
 

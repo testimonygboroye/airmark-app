@@ -10,9 +10,16 @@ interface Props {
   teamId: string;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  idle: "Waiting for operator to open Go Live",
+  connecting: "Connecting…",
+  reconnecting: "Reconnecting — weak signal?",
+  failed: "Connection failed",
+};
+
 export function DirectorCameraTile({ camera, eventId, teamId }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const stream = useDirectorCameraStream(eventId, teamId, camera.operatorUserId?._id);
+  const { stream, status } = useDirectorCameraStream(eventId, teamId, camera.operatorUserId?._id);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = stream;
@@ -26,15 +33,17 @@ export function DirectorCameraTile({ camera, eventId, teamId }: Props) {
     <button
       onClick={() => setLiveMutation.mutate()}
       disabled={setLiveMutation.isPending}
-      className={`rounded-2xl overflow-hidden text-left transition-all border-2 ${
-        camera.isLive ? "border-signal-red" : "border-standby-slate/20 dark:border-white/10"
-      } bg-white dark:bg-white/5`}
+      className={`rounded-2xl overflow-hidden text-left transition-all border-2 ${camera.isLive ? "border-signal-red" : "border-standby-slate/20 dark:border-white/10"} bg-white dark:bg-white/5`}
     >
       <div className="relative aspect-[4/3] bg-black">
         {stream ? (
           <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className={`absolute inset-0 ${camera.isLive ? "bg-signal-red" : "bg-standby-slate/10 dark:bg-white/5"}`} />
+          <div className={`absolute inset-0 flex items-center justify-center px-2 ${camera.isLive ? "bg-signal-red" : "bg-standby-slate/10 dark:bg-white/5"}`}>
+            {camera.operatorUserId && status !== "idle" && (
+              <p className="text-[10px] text-center text-white/70">{STATUS_LABELS[status]}</p>
+            )}
+          </div>
         )}
       </div>
       <div className="px-3 py-2">
