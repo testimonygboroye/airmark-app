@@ -511,3 +511,37 @@ Actual video flows separately: simple teams have someone physically choosing whi
 ];
 
 export const HELP_CATEGORIES = Array.from(new Set(HELP_ARTICLES.map((a) => a.category)));
+HELP_ARTICLES.push(
+  {
+    id: "operator-video-preview",
+    category: "Live Mode",
+    title: "How the operator's camera preview works, and what to do on a weak connection",
+    keywords: ["video", "preview", "camera", "director", "see", "connection", "weak", "rural"],
+    content: `Your Go Live screen shows your own camera's live feed directly on your phone — no separate camera app needed. The Director's phone can also see this same feed on their camera grid, sent directly phone-to-phone (never through Airmark's servers, so it costs nothing and stays fast).
+
+On a weak or rural connection, Airmark automatically requests a smaller, lower-frame-rate picture specifically because it's far more likely to connect and stay connected than a crisp one that keeps failing — a blurrier picture that works beats a clear one that doesn't. If a connection drops, it retries automatically every few seconds without you needing to do anything. The Director's camera tile will show "Connecting…" or "Reconnecting — weak signal?" while this happens, and switches to your live video the moment it succeeds.
+
+If a connection genuinely cannot be established (extremely poor signal), that camera simply won't show live video to the Director — but tally (LIVE/STANDBY) still works normally regardless, since that's a tiny text message, not video.`,
+  },
+  {
+    id: "countdown-controls-explained",
+    category: "Live Mode",
+    title: "Countdown: Pause, Resume, and Stop explained",
+    keywords: ["countdown", "pause", "resume", "stop", "cancel"],
+    content: `Once a countdown is running, two buttons appear: "Pause" (highlighted, the primary action — freezes the remaining time exactly where it is) and "Stop countdown" (removes it entirely). While paused, "Resume" picks up from exactly where you left off, or "Stop countdown" cancels it completely. While setting up a new countdown before starting it, "Close" simply dismisses that setup box without starting anything — different from "Stop countdown," which only appears once a countdown is actually running or paused.`,
+  },
+  {
+    id: "settings-vs-profile",
+    category: "Getting Started",
+    title: "Settings vs. Profile — what's the difference?",
+    keywords: ["settings", "profile", "difference", "zoom", "preferences"],
+    content: `Profile holds anything tied to your account identity: your name, password, two-factor authentication, and account deletion. Settings (a separate page in the sidebar) holds general app preferences that aren't account-security related — currently your camera zoom limit, which controls how far the zoom slider goes on your Go Live camera preview.`,
+  },
+  {
+    id: "camera-zoom",
+    category: "Live Mode",
+    title: "How to use and adjust camera zoom",
+    keywords: ["zoom", "camera", "pinch"],
+    content: `On your Go Live screen, a zoom slider appears beneath your camera preview if your device supports it (most Android phones; not currently supported on iOS Safari — a browser limitation, not something Airmark controls). Drag it to zoom in or out live. To set how far that slider can go, visit Settings in the sidebar and adjust your camera zoom limit — this is a one-time preference, not something you set during a live event.`,
+  }
+);
