@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
+import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "New Team", to: "/teams/new", Icon: NewTeamIcon },
   { label: "Invites", to: "/invites", Icon: InvitesIcon },
   { label: "Profile", to: "/profile", Icon: ProfileIcon },
+  { label: "Settings", to: "/settings", Icon: SettingsIcon },
   { label: "Help & Guide", to: "/help", Icon: HelpIcon },
 ];
 

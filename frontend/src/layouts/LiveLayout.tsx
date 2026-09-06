@@ -5,7 +5,7 @@ import { NotificationBell } from "@/components/ui/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { AppSidebar } from "@/components/ui/AppSidebar";
-import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
+import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
 
 const NAV_ITEMS = [
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "New Team", to: "/teams/new", Icon: NewTeamIcon },
   { label: "Invites", to: "/invites", Icon: InvitesIcon },
   { label: "Profile", to: "/profile", Icon: ProfileIcon },
+  { label: "Settings", to: "/settings", Icon: SettingsIcon },
   { label: "Help & Guide", to: "/help", Icon: HelpIcon },
 ];
 

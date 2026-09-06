@@ -32,6 +32,7 @@ import { TeamMembersPage } from "@/pages/setup/TeamMembersPage";
 import { NotificationsPage } from "@/pages/setup/NotificationsPage";
 import { NotificationDetailPage } from "@/pages/setup/NotificationDetailPage";
 import { ProfilePage } from "@/pages/setup/ProfilePage";
+import { SettingsPage } from "@/pages/setup/SettingsPage";
 import { MyInvitesPage } from "@/pages/setup/MyInvitesPage";
 import { HelpPage } from "@/pages/setup/HelpPage";
 import { HelpArticlePage } from "@/pages/setup/HelpArticlePage";
@@ -81,6 +82,7 @@ export function AppRouter() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/invites" element={<MyInvitesPage />} />
           <Route path="/system-console" element={<AdminDashboardPage />} />
           <Route path="/help" element={<HelpPage />} />

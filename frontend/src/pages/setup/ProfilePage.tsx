@@ -40,9 +40,6 @@ export function ProfilePage() {
   const [secretCopied, setSecretCopied] = useState(false);
   const [backupCopied, setBackupCopied] = useState(false);
 
-  const [zoomPreference, setZoomPreference] = useState(10);
-  const [zoomPrefSaved, setZoomPrefSaved] = useState(false);
-
   const [deleteText, setDeleteText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -51,7 +48,6 @@ export function ProfilePage() {
   useEffect(() => {
     apiClient.get("/auth/me").then((res) => {
       setTwoFactorEnabled(res.data.data.twoFactorEnabled ?? false);
-      setZoomPreference(res.data.data.maxZoomPreference ?? 10);
     }).catch(() => setTwoFactorEnabled(false));
   }, []);
 
@@ -125,14 +121,6 @@ export function ProfilePage() {
     onError: (err) => setDisableError(getErrorMessage(err)),
   });
 
-  const zoomPrefMutation = useMutation({
-    mutationFn: async () => { await apiClient.patch("/auth/zoom-preference", { maxZoomPreference: zoomPreference }); },
-    onSuccess: () => {
-      setZoomPrefSaved(true);
-      setTimeout(() => setZoomPrefSaved(false), 1500);
-    },
-  });
-
   const deleteAccountMutation = useMutation({
     mutationFn: async () => { await apiClient.delete("/auth/me", { data: { confirmationText: deleteText, password: deletePassword } }); },
     onSuccess: () => {
@@ -168,7 +156,10 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-8 flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold">Profile & Settings</h1>
+      <h1 className="font-display text-2xl font-semibold">Profile</h1>
+      <p className="text-sm text-standby-slate -mt-4">
+        Account-specific settings. Looking for app preferences like camera zoom? Check Settings in the sidebar.
+      </p>
 
       <Card>
         <p className="font-display text-sm font-semibold mb-3">Your details</p>
@@ -195,15 +186,6 @@ export function ProfilePage() {
             Change password
           </Button>
         </div>
-      </Card>
-
-      <Card>
-        <p className="font-display text-sm font-semibold mb-1">Camera zoom limit</p>
-        <p className="text-xs text-standby-slate mb-3">
-          Controls how far the zoom slider goes on your Go Live camera preview — set it low to disable zoom, or raise it toward your device's hardware maximum.
-        </p>
-        <input type="range" min={1} max={50} step={1} value={zoomPreference} onChange={(e) => setZoomPreference(parseInt(e.target.value, 10))} onMouseUp={() => zoomPrefMutation.mutate()} onTouchEnd={() => zoomPrefMutation.mutate()} className="w-full" />
-        <p className="text-xs text-standby-slate mt-1">Max: {zoomPreference}x{zoomPrefSaved ? " — saved" : ""}</p>
       </Card>
 
       <Card>
