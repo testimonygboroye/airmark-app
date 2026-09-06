@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getSocket } from "@/lib/socketClient";
-import { createPeerConnection } from "@/lib/webrtc";
+import { createPeerConnection, LOW_BANDWIDTH_VIDEO_CONSTRAINTS, applyLowBandwidthEncoding } from "@/lib/webrtc";
 
 export function useOperatorCamera(eventId: string, teamId: string, active: boolean) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -18,7 +18,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
 
     async function start() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: LOW_BANDWIDTH_VIDEO_CONSTRAINTS, audio: false });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -46,11 +46,13 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
 
     async function handleOffer(payload: { fromUserId: string; sdp: RTCSessionDescriptionInit; eventId: string }) {
       if (payload.eventId !== eventId || !streamRef.current) return;
-      const existing = peersRef.current.get(payload.fromUserId);
-      existing?.close();
+      peersRef.current.get(payload.fromUserId)?.close();
 
       const pc = createPeerConnection();
-      streamRef.current.getTracks().forEach((track) => pc.addTrack(track, streamRef.current!));
+      streamRef.current.getTracks().forEach((track) => {
+        const sender = pc.addTrack(track, streamRef.current!);
+        applyLowBandwidthEncoding(sender);
+      });
       pc.onicecandidate = (e) => {
         if (e.candidate) socket?.emit("webrtc:ice-candidate", { toUserId: payload.fromUserId, eventId, candidate: e.candidate });
       };
@@ -79,9 +81,6 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     socket?.on("webrtc:ice-candidate", handleIceCandidate);
     socket?.on("webrtc:request-cameras", handleRequestCameras);
 
-    // Periodic re-announcement — a director whose connection dropped and
-    // is retrying (see useDirectorCameraStream) needs this to know a
-    // camera is still available, without waiting for a manual page reload.
     const heartbeat = setInterval(() => {
       if (streamRef.current) socket?.emit("webrtc:camera-ready", { eventId, teamId });
     }, 8000);
@@ -104,9 +103,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     if (!trackRef.current) return;
     try {
       await trackRef.current.applyConstraints({ advanced: [{ zoom: value } as any] });
-    } catch {
-      /* device reports support but doesn't honor it — silently ignore */
-    }
+    } catch { /* device doesn't honor it despite reporting support */ }
   }
 
   return { localVideoRef, cameraError, hasCamera, zoomSupported, zoomRange, setZoom };

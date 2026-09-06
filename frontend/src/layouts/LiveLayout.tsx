@@ -23,11 +23,15 @@ export function LiveLayout() {
   const { user } = useAuthStore();
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-surface-light dark:bg-navy">
+    // h-screen (fixed) not min-h-screen (grows-if-needed) — this was the
+    // actual bug. min-h-screen let content exceed the viewport and the
+    // whole page scrolled to reveal it; h-screen forces everything inside
+    // to fit within one real screen's height, no exceptions.
+    <div className="h-screen overflow-hidden flex flex-col md:flex-row bg-surface-light dark:bg-navy">
       <AppSidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((v) => !v)} />
 
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-standby-slate/15 bg-surface-light dark:bg-navy">
+      <div className="flex-1 flex flex-col min-h-0">
+        <header className="md:hidden shrink-0 flex items-center justify-between px-4 py-3 border-b border-standby-slate/15 bg-surface-light dark:bg-navy">
           <Logo size={26} />
           <div className="flex items-center gap-1">
             <NotificationBell />
@@ -69,10 +73,7 @@ export function LiveLayout() {
           </div>
         )}
 
-        {/* No pb-16 here — the sticky BottomNav already reserves its own
-            real space in the layout; adding padding on top of that was
-            double-counting height and forcing an unwanted scroll. */}
-        <main className="flex-1 min-h-0 flex flex-col">
+        <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <Outlet />
         </main>
 

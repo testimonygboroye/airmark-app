@@ -62,7 +62,7 @@ export function CountdownControls({ eventId, teamId, isActive, isPaused }: Props
   if (isActive) {
     return (
       <div className="flex items-center gap-1.5">
-        <button onClick={() => pauseMutation.mutate()} disabled={pauseMutation.isPending} className={btnBase}>Pause</button>
+        <button onClick={() => pauseMutation.mutate()} disabled={pauseMutation.isPending} className="text-xs bg-accent-teal text-navy font-semibold px-3 py-1.5 rounded-lg">Pause</button>
         <button onClick={() => cancelRunningMutation.mutate()} disabled={cancelRunningMutation.isPending} className="text-xs text-signal-red font-medium px-3 py-1.5 rounded-lg border border-signal-red/30">Stop countdown</button>
       </div>
     );

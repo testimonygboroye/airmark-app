@@ -25,19 +25,20 @@ export function OperatorLiveView({
       <TalkbackBanner message={latestTalkback} />
       <SegmentBanner currentSegment={currentSegment} nextSegment={nextSegment} />
 
-      <p className="text-xs font-medium opacity-70 tracking-widest uppercase text-center py-2 shrink-0">
+      <p className="shrink-0 text-xs font-medium opacity-70 tracking-widest uppercase text-center py-2">
         {camera.label} (You)
       </p>
 
       <OperatorCameraPreview eventId={eventId} teamId={teamId} />
 
-      <div className={`shrink-0 flex items-center justify-between px-4 py-3 mb-1.5 ${camera.isLive ? "bg-signal-red" : "bg-navy"}`}>
+      <div className={`shrink-0 flex items-center justify-between px-4 py-3 ${camera.isLive ? "bg-signal-red" : "bg-navy"}`}>
         <div className="flex items-center gap-1.5">
           <span className={`w-3 h-3 rounded-full ${camera.isLive ? "bg-white" : "bg-white/30"}`} />
           <span className="text-[10px] font-bold tracking-wide">{camera.isLive ? "LIVE" : "STANDBY"}</span>
         </div>
-        <OperatorActionDock eventId={eventId} teamId={teamId} cameraId={camera._id} />
       </div>
+
+      <OperatorActionDock eventId={eventId} teamId={teamId} cameraId={camera._id} />
     </div>
   );
 }
