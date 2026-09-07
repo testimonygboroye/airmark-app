@@ -18,7 +18,7 @@ import {
   request2FARecoverySchema,
   confirm2FARecoverySchema,
   deleteAccountSchema,
-  updateZoomPreferenceSchema,
+
 } from "../validators/auth.validator";
 
 const router = Router();
@@ -38,7 +38,6 @@ router.get("/me", requireAuth, authController.getMe);
 router.patch("/me", requireAuth, validate(updateProfileSchema), authController.updateProfile);
 router.delete("/me", requireAuth, validate(deleteAccountSchema), authController.deleteAccount);
 router.post("/change-password", requireAuth, validate(changePasswordSchema), authController.changePassword);
-router.patch("/zoom-preference", requireAuth, validate(updateZoomPreferenceSchema), authController.updateZoomPreference);
 router.post("/2fa/setup", requireAuth, authController.setup2FA);
 router.post("/2fa/confirm", requireAuth, validate(confirm2FASchema), authController.confirmSetup2FA);
 router.post("/2fa/disable", requireAuth, validate(disable2FASchema), authController.disable2FA);

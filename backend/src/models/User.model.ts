@@ -21,7 +21,6 @@ export interface IUser extends Document {
   twoFactorBackupCodeHashes: string[];
   twoFactorRecoveryTokenHash?: string;
   twoFactorRecoveryExpires?: Date;
-  maxZoomPreference?: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -53,7 +52,6 @@ const userSchema = new Schema<IUser>(
     twoFactorBackupCodeHashes: { type: [String], default: [], select: false },
     twoFactorRecoveryTokenHash: { type: String, select: false },
     twoFactorRecoveryExpires: { type: Date, select: false },
-    maxZoomPreference: { type: Number, default: 10 },
   },
   { timestamps: true }
 );

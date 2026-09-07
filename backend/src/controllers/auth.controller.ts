@@ -201,7 +201,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   if (!user) throw ApiError.notFound("User not found");
   res.json({
     success: true,
-    data: { id: user._id, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName, email: user.email, isSuperAdmin: user.isSuperAdmin, isEmailVerified: user.isEmailVerified, twoFactorEnabled: user.twoFactorEnabled, maxZoomPreference: user.maxZoomPreference ?? 10 },
+    data: { id: user._id, firstName: user.firstName, middleName: user.middleName, lastName: user.lastName, email: user.email, isSuperAdmin: user.isSuperAdmin, isEmailVerified: user.isEmailVerified, twoFactorEnabled: user.twoFactorEnabled },
   });
 });
 
@@ -334,11 +334,3 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   res.json({ success: true, message: "Account permanently deleted" });
 });
 
-export const updateZoomPreference = asyncHandler(async (req: Request, res: Response) => {
-  const { maxZoomPreference } = req.body;
-  const user = await User.findById(req.user!.id);
-  if (!user) throw ApiError.notFound("User not found");
-  user.maxZoomPreference = maxZoomPreference;
-  await user.save();
-  res.json({ success: true, data: { maxZoomPreference: user.maxZoomPreference } });
-});
