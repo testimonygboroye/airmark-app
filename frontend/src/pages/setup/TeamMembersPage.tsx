@@ -15,6 +15,7 @@ export function TeamMembersPage() {
   const navigate = useNavigate();
   const { hasPermission } = useTeamRole(teamId);
   const canManageTeam = hasPermission("team:manage");
+  const canManageMembers = hasPermission("member:invite");
 
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
@@ -111,17 +112,27 @@ export function TeamMembersPage() {
   });
 
   const revokeMutation = useMutation({
-    mutationFn: async (inviteId: string) => {
-      await apiClient.delete(`/teams/${teamId}/invites/${inviteId}`);
-    },
+    mutationFn: async (inviteId: string) => { await apiClient.delete(`/teams/${teamId}/invites/${inviteId}`); },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendingInvites", teamId] }),
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (membershipId: string) => {
-      await apiClient.delete(`/teams/${teamId}/members/${membershipId}`);
+    mutationFn: async (membershipId: string) => { await apiClient.delete(`/teams/${teamId}/members/${membershipId}`); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] }),
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const changeRoleMutation = useMutation({
+    mutationFn: async ({ membershipId, roleId: newRoleId }: { membershipId: string; roleId: string }) => {
+      await apiClient.patch(`/teams/${teamId}/members/${membershipId}/role`, { roleId: newRoleId });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] }),
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const leaveTeamMutation = useMutation({
+    mutationFn: async () => { await apiClient.post(`/teams/${teamId}/leave`); },
+    onSuccess: () => navigate("/dashboard"),
     onError: (err) => setError(getErrorMessage(err)),
   });
 
@@ -144,12 +155,12 @@ export function TeamMembersPage() {
   });
 
   const deleteTeamMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.delete(`/teams/${teamId}`, { data: { confirmationText: deleteConfirmText } });
-    },
+    mutationFn: async () => { await apiClient.delete(`/teams/${teamId}`, { data: { confirmationText: deleteConfirmText } }); },
     onSuccess: () => navigate("/dashboard"),
     onError: (err) => setDeleteError(getErrorMessage(err)),
   });
+
+  const assignableRoles = roles?.filter((r) => r.name !== "Team Owner") ?? [];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -158,73 +169,38 @@ export function TeamMembersPage() {
           <div className="flex flex-col gap-2 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <Input label="" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="flex-1" />
-              <button onClick={() => renameMutation.mutate()} disabled={renameMutation.isPending} className="text-xs font-semibold text-accent-teal shrink-0">
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setEditingName(false);
-                  setTeamName(currentTeam?.name ?? "");
-                  setRenameError(null);
-                }}
-                className="text-xs text-standby-slate shrink-0"
-              >
-                Cancel
-              </button>
+              <button onClick={() => renameMutation.mutate()} disabled={renameMutation.isPending} className="text-xs font-semibold text-accent-teal shrink-0">Save</button>
+              <button onClick={() => { setEditingName(false); setTeamName(currentTeam?.name ?? ""); setRenameError(null); }} className="text-xs text-standby-slate shrink-0">Cancel</button>
             </div>
             {renameError && <p className="text-xs text-signal-red">{renameError}</p>}
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="font-display text-2xl font-semibold truncate">{currentTeam?.name ?? "Team members"}</h1>
-            {canManageTeam && (
-              <button onClick={() => setEditingName(true)} className="text-xs text-accent-teal font-medium shrink-0">
-                Rename
-              </button>
-            )}
+            {canManageTeam && <button onClick={() => setEditingName(true)} className="text-xs text-accent-teal font-medium shrink-0">Rename</button>}
           </div>
         )}
-        {!editingName && (
-          <Link to={`/teams/${teamId}/events`} className="text-xs text-accent-teal font-medium shrink-0">
-            Back
-          </Link>
-        )}
+        {!editingName && <Link to={`/teams/${teamId}/events`} className="text-xs text-accent-teal font-medium shrink-0">Back</Link>}
       </div>
 
       {renameMessage && <p className="text-sm text-accent-teal mb-4">{renameMessage}</p>}
       {transferMessage && <p className="text-sm text-accent-teal mb-4">{transferMessage}</p>}
 
-      <Card className="mb-6">
-        <p className="font-display text-sm font-semibold mb-3">Invite someone</p>
-        <div className="flex flex-col gap-3">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null);
-            }}
-          />
-          <select
-            className="text-sm rounded-lg border border-standby-slate/30 px-3 py-2.5 bg-white dark:bg-navy/60"
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-          >
-            <option value="">Select role…</option>
-            {roles?.filter((r) => r.name !== "Team Owner").map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          {error && <p className="text-sm text-signal-red">{error}</p>}
-          {message && <p className="text-sm text-accent-teal">{message}</p>}
-          <Button onClick={() => inviteMutation.mutate()} isLoading={inviteMutation.isPending} disabled={!email || !roleId}>
-            Send invite
-          </Button>
-        </div>
-      </Card>
+      {canManageMembers && (
+        <Card className="mb-6">
+          <p className="font-display text-sm font-semibold mb-3">Invite someone</p>
+          <div className="flex flex-col gap-3">
+            <Input label="Email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} />
+            <select className="text-sm rounded-lg border border-standby-slate/30 px-3 py-2.5 bg-white dark:bg-navy/60" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+              <option value="">Select role…</option>
+              {assignableRoles.map((r) => (<option key={r._id} value={r._id}>{r.name}</option>))}
+            </select>
+            {error && <p className="text-sm text-signal-red">{error}</p>}
+            {message && <p className="text-sm text-accent-teal">{message}</p>}
+            <Button onClick={() => inviteMutation.mutate()} isLoading={inviteMutation.isPending} disabled={!email || !roleId}>Send invite</Button>
+          </div>
+        </Card>
+      )}
 
       {pendingInvites && pendingInvites.length > 0 && (
         <>
@@ -234,16 +210,9 @@ export function TeamMembersPage() {
               <Card key={invite._id} className="!p-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">{invite.email}</p>
-                  <p className="text-xs text-standby-slate mt-0.5">
-                    Invited as {invite.roleId.name} · expires {new Date(invite.expiresAt).toLocaleDateString()}
-                  </p>
+                  <p className="text-xs text-standby-slate mt-0.5">Invited as {invite.roleId.name} · expires {new Date(invite.expiresAt).toLocaleDateString()}</p>
                 </div>
-                <button
-                  onClick={() => confirm(`Revoke the invite to ${invite.email}?`) && revokeMutation.mutate(invite._id)}
-                  className="text-xs text-signal-red font-medium"
-                >
-                  Revoke
-                </button>
+                <button onClick={() => confirm(`Revoke the invite to ${invite.email}?`) && revokeMutation.mutate(invite._id)} className="text-xs text-signal-red font-medium">Revoke</button>
               </Card>
             ))}
           </div>
@@ -254,67 +223,56 @@ export function TeamMembersPage() {
       {membersLoading && <p className="text-sm text-standby-slate">Loading…</p>}
       <div className="flex flex-col gap-2 mb-6">
         {members?.map((m) => (
-          <Card key={m._id} className="!p-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium">
-                {m.userId.firstName} {m.userId.lastName}
-              </p>
-              <p className="text-xs text-standby-slate mt-0.5">
-                {m.userId.email} · {m.roleId.name}
-              </p>
+          <Card key={m._id} className="!p-4 flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{m.userId.firstName} {m.userId.lastName}</p>
+              <p className="text-xs text-standby-slate mt-0.5 truncate">{m.userId.email} · {m.roleId.name}</p>
             </div>
-            {m.roleId.name !== "Team Owner" && (
-              <button
-                onClick={() => confirm(`Remove ${m.userId.firstName} from the team?`) && removeMutation.mutate(m._id)}
-                className="text-xs text-signal-red font-medium shrink-0"
-              >
-                Remove
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {canManageMembers && m.roleId.name !== "Team Owner" && (
+                <select
+                  className="text-xs rounded-lg border border-standby-slate/30 px-2 py-1.5 bg-white dark:bg-navy/60"
+                  value={m.roleId._id}
+                  onChange={(e) => changeRoleMutation.mutate({ membershipId: m._id, roleId: e.target.value })}
+                >
+                  {assignableRoles.map((r) => (<option key={r._id} value={r._id}>{r.name}</option>))}
+                </select>
+              )}
+              {m.roleId.name !== "Team Owner" && (
+                <button onClick={() => confirm(`Remove ${m.userId.firstName} from the team?`) && removeMutation.mutate(m._id)} className="text-xs text-signal-red font-medium shrink-0">Remove</button>
+              )}
+            </div>
           </Card>
         ))}
       </div>
+
+      {!isOwner && (
+        <Card className="mb-6 border-signal-red/30">
+          <p className="font-display text-sm font-semibold text-signal-red mb-1">Leave this team</p>
+          <p className="text-xs text-standby-slate mb-3">You'll lose access to this team's events and data.</p>
+          {error && <p className="text-sm text-signal-red mb-2">{error}</p>}
+          <Button variant="ghost" onClick={() => confirm("Leave this team? You'll need a new invite to rejoin.") && leaveTeamMutation.mutate()} isLoading={leaveTeamMutation.isPending} className="text-signal-red">
+            Leave team
+          </Button>
+        </Card>
+      )}
 
       {isOwner && (
         <>
           <Card className="mb-4">
             <p className="font-display text-sm font-semibold mb-1">Transfer ownership</p>
-            <p className="text-xs text-standby-slate mb-3">
-              Works for a current member, a registered non-member, or someone with no Airmark account yet — they'll get an invite, and ownership moves automatically once accepted.
-            </p>
+            <p className="text-xs text-standby-slate mb-3">Works for a current member, a registered non-member, or an unregistered email — they'll get an invite, and ownership moves once accepted.</p>
             {!showTransfer ? (
-              <Button variant="ghost" onClick={() => setShowTransfer(true)}>
-                Transfer ownership
-              </Button>
+              <Button variant="ghost" onClick={() => setShowTransfer(true)}>Transfer ownership</Button>
             ) : (
               <div className="flex flex-col gap-2">
                 <Input label="Email of new owner" type="email" value={transferEmail} onChange={(e) => setTransferEmail(e.target.value)} />
-                <p className="text-xs text-signal-red font-medium">
-                  Type "TRANSFER OWNERSHIP" below to confirm — this can't be easily undone.
-                </p>
+                <p className="text-xs text-signal-red font-medium">Type "TRANSFER OWNERSHIP" below to confirm.</p>
                 <Input label="Confirmation" value={transferConfirmText} onChange={(e) => setTransferConfirmText(e.target.value)} />
                 {transferError && <p className="text-sm text-signal-red">{transferError}</p>}
                 <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setShowTransfer(false);
-                      setTransferEmail("");
-                      setTransferConfirmText("");
-                      setTransferError(null);
-                    }}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => transferMutation.mutate()}
-                    isLoading={transferMutation.isPending}
-                    disabled={!transferEmail || transferConfirmText !== "TRANSFER OWNERSHIP"}
-                    className="flex-1"
-                  >
-                    Confirm transfer
-                  </Button>
+                  <Button variant="ghost" onClick={() => { setShowTransfer(false); setTransferEmail(""); setTransferConfirmText(""); setTransferError(null); }} className="flex-1">Cancel</Button>
+                  <Button onClick={() => transferMutation.mutate()} isLoading={transferMutation.isPending} disabled={!transferEmail || transferConfirmText !== "TRANSFER OWNERSHIP"} className="flex-1">Confirm transfer</Button>
                 </div>
               </div>
             )}
@@ -322,32 +280,17 @@ export function TeamMembersPage() {
 
           <Card className="border-signal-red/30">
             <p className="font-display text-sm font-semibold text-signal-red mb-1">Delete this team</p>
-            <p className="text-xs text-standby-slate mb-3">
-              Permanently deletes the team, its events, and all data. Remove all other members first.
-            </p>
+            <p className="text-xs text-standby-slate mb-3">Permanently deletes the team, its events, and all data. Remove all other members first.</p>
             {!showDeleteTeam ? (
-              <Button variant="ghost" onClick={() => setShowDeleteTeam(true)} className="text-signal-red">
-                Delete team
-              </Button>
+              <Button variant="ghost" onClick={() => setShowDeleteTeam(true)} className="text-signal-red">Delete team</Button>
             ) : (
               <div className="flex flex-col gap-3">
-                <p className="text-xs text-standby-slate">
-                  Type <strong>DELETE {currentTeam?.name}</strong> to confirm.
-                </p>
+                <p className="text-xs text-standby-slate">Type <strong>DELETE {currentTeam?.name}</strong> to confirm.</p>
                 <Input label="Confirmation" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} />
                 {deleteError && <p className="text-sm text-signal-red">{deleteError}</p>}
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setShowDeleteTeam(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => deleteTeamMutation.mutate()}
-                    isLoading={deleteTeamMutation.isPending}
-                    disabled={deleteConfirmText !== `DELETE ${currentTeam?.name}`}
-                    className="flex-1 !bg-signal-red"
-                  >
-                    Permanently delete
-                  </Button>
+                  <Button variant="ghost" onClick={() => setShowDeleteTeam(false)} className="flex-1">Cancel</Button>
+                  <Button onClick={() => deleteTeamMutation.mutate()} isLoading={deleteTeamMutation.isPending} disabled={deleteConfirmText !== `DELETE ${currentTeam?.name}`} className="flex-1 !bg-signal-red">Permanently delete</Button>
                 </div>
               </div>
             )}

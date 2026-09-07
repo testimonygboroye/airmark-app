@@ -7,7 +7,11 @@ interface Props {
   eventId: string;
   teamId: string;
   cameraId?: string;
-  inline?: boolean;
+  torchSupported?: boolean;
+  torchOn?: boolean;
+  onToggleTorch?: () => void;
+  canFlipCamera?: boolean;
+  onFlipCamera?: () => void;
 }
 
 type PanelKey = "mark" | "signal" | "equipment" | null;
@@ -23,7 +27,7 @@ const EQUIPMENT_OPTIONS: { type: EquipmentIssueType; label: string }[] = [
   { type: "equipment_fault", label: "Equipment fault" },
 ];
 
-export function OperatorActionDock({ eventId, teamId, cameraId, inline }: Props) {
+export function OperatorActionDock({ eventId, teamId, cameraId, torchSupported, torchOn, onToggleTorch, canFlipCamera, onFlipCamera }: Props) {
   const [openPanel, setOpenPanel] = useState<PanelKey>(null);
   const [markLabel, setMarkLabel] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -47,7 +51,7 @@ export function OperatorActionDock({ eventId, teamId, cameraId, inline }: Props)
   });
 
   return (
-    <div className={inline ? "flex items-center gap-2" : "shrink-0 relative bg-navy px-4 py-2.5 flex items-center justify-end gap-2 border-t border-white/10"}>
+    <div className="flex items-center gap-2 flex-wrap justify-end">
       {openPanel && <div className="fixed inset-0 z-40" onClick={() => setOpenPanel(null)} />}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-lg bg-white text-navy dark:bg-navy dark:text-surface-light text-xs font-semibold shadow-lg whitespace-nowrap border border-standby-slate/20">
@@ -66,22 +70,28 @@ export function OperatorActionDock({ eventId, teamId, cameraId, inline }: Props)
       {openPanel === "equipment" && (
         <div className="fixed bottom-20 right-4 z-50 flex flex-col gap-2 bg-white dark:bg-navy border border-standby-slate/20 shadow-xl rounded-xl p-2 w-52">
           {EQUIPMENT_OPTIONS.map((opt) => (
-            <button key={opt.type} onClick={() => equipmentMutation.mutate(opt.type)} disabled={equipmentMutation.isPending} className="px-3 py-2.5 rounded-lg text-sm text-left text-navy dark:text-surface-light hover:bg-standby-slate/10">
-              {opt.label}
-            </button>
+            <button key={opt.type} onClick={() => equipmentMutation.mutate(opt.type)} disabled={equipmentMutation.isPending} className="px-3 py-2.5 rounded-lg text-sm text-left text-navy dark:text-surface-light hover:bg-standby-slate/10">{opt.label}</button>
           ))}
         </div>
       )}
       {openPanel === "signal" && (
         <div className="fixed bottom-20 right-4 z-50 flex flex-col gap-2 bg-white dark:bg-navy border border-standby-slate/20 shadow-xl rounded-xl p-2 w-52">
           {SIGNAL_OPTIONS.map((opt) => (
-            <button key={opt.type} onClick={() => signalMutation.mutate(opt.type)} disabled={signalMutation.isPending} className="px-3 py-2.5 rounded-lg text-sm text-left text-navy dark:text-surface-light hover:bg-standby-slate/10">
-              {opt.label}
-            </button>
+            <button key={opt.type} onClick={() => signalMutation.mutate(opt.type)} disabled={signalMutation.isPending} className="px-3 py-2.5 rounded-lg text-sm text-left text-navy dark:text-surface-light hover:bg-standby-slate/10">{opt.label}</button>
           ))}
         </div>
       )}
 
+      {torchSupported && (
+        <button onClick={onToggleTorch} aria-label="Toggle flashlight" className={`w-10 h-10 rounded-full flex items-center justify-center ${torchOn ? "bg-accent-teal text-navy" : "bg-white/15"}`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 2h6l-1 6h2l-7 12 1-8H8l1-10z" fill="currentColor" /></svg>
+        </button>
+      )}
+      {canFlipCamera && (
+        <button onClick={onFlipCamera} aria-label="Switch camera" className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 2l4 4-4 4M7 22l-4-4 4-4M3 6h13a4 4 0 014 4v1M21 18H8a4 4 0 01-4-4v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+      )}
       <button onClick={() => setOpenPanel((p) => (p === "mark" ? null : "mark"))} className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center" aria-label="Mark highlight">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-6-4-6 4V3z" fill="currentColor" /></svg>
       </button>

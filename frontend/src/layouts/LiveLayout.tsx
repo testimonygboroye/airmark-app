@@ -7,6 +7,9 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { AppSidebar } from "@/components/ui/AppSidebar";
 import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
+import { apiClient } from "@/lib/apiClient";
+import { disconnectSocket } from "@/lib/socketClient";
+import { useNavigate } from "react-router";
 
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
@@ -19,16 +22,23 @@ const NAV_ITEMS = [
 
 export function LiveLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("airmark-sidebar-collapsed") === "1");
-  const { user } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    if (!window.confirm("Log out of Airmark?")) return;
+    try {
+      await apiClient.post("/auth/logout");
+    } finally {
+      disconnectSocket();
+      clearAuth();
+      navigate("/login", { state: { loggedOut: true }, replace: true });
+    }
+  }
 
   return (
-    // h-screen (fixed) not min-h-screen (grows-if-needed) — this was the
-    // actual bug. min-h-screen let content exceed the viewport and the
-    // whole page scrolled to reveal it; h-screen forces everything inside
-    // to fit within one real screen's height, no exceptions.
     <div className="h-screen overflow-hidden flex flex-col md:flex-row bg-surface-light dark:bg-navy">
-      <AppSidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((v) => !v)} />
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} />
 
       <div className="flex-1 flex flex-col min-h-0">
         <header className="md:hidden shrink-0 flex items-center justify-between px-4 py-3 border-b border-standby-slate/15 bg-surface-light dark:bg-navy">
@@ -68,12 +78,17 @@ export function LiveLayout() {
               <div className="mt-auto pt-6 border-t border-standby-slate/15">
                 <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
                 <div className="mt-2"><ThemeToggle /></div>
+                <button onClick={handleLogout} className="text-xs text-signal-red font-medium mt-3">Log out</button>
               </div>
             </div>
           </div>
         )}
 
-        <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* overflow-y-auto here (not hidden) — Director's content is
+            taller than the viewport and needs to scroll. OperatorLiveView
+            fills this exactly with h-full + its own overflow-hidden, so
+            it never triggers this scroll despite the parent allowing it. */}
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <Outlet />
         </main>
 

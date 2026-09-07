@@ -93,6 +93,9 @@ export function HelpPage() {
         )}
       </div>
 
+      <p className="text-center text-xs text-standby-slate/50 py-6 border-t border-standby-slate/10 mt-4">
+        {visibleArticles.length} article{visibleArticles.length === 1 ? "" : "s"} in this guide
+      </p>
       <BackToTopButton />
     </div>
   );

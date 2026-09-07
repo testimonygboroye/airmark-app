@@ -7,23 +7,24 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
-  { label: "New Team", to: "/teams/new", Icon: NewTeamIcon },
-  { label: "Invites", to: "/invites", Icon: InvitesIcon },
-  { label: "Profile", to: "/profile", Icon: ProfileIcon },
-  { label: "Settings", to: "/settings", Icon: SettingsIcon },
-  { label: "Help & Guide", to: "/help", Icon: HelpIcon },
-];
-
 interface Props {
   collapsed: boolean;
   onToggleCollapse: () => void;
+  inviteCount?: number;
 }
 
-export function AppSidebar({ collapsed, onToggleCollapse }: Props) {
+export function AppSidebar({ collapsed, onToggleCollapse, inviteCount = 0 }: Props) {
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
+
+  const NAV_ITEMS = [
+    { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon, badge: 0 },
+    { label: "New Team", to: "/teams/new", Icon: NewTeamIcon, badge: 0 },
+    { label: "Invites", to: "/invites", Icon: InvitesIcon, badge: inviteCount },
+    { label: "Profile", to: "/profile", Icon: ProfileIcon, badge: 0 },
+    { label: "Settings", to: "/settings", Icon: SettingsIcon, badge: 0 },
+    { label: "Help & Guide", to: "/help", Icon: HelpIcon, badge: 0 },
+  ];
 
   async function handleLogout() {
     if (!window.confirm("Log out of Airmark?")) return;
@@ -44,10 +45,17 @@ export function AppSidebar({ collapsed, onToggleCollapse }: Props) {
       </div>
 
       <nav className="flex flex-col gap-1 mt-8">
-        {NAV_ITEMS.map(({ label, to, Icon }) => (
-          <Link key={to} to={to} title={collapsed ? label : undefined} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 ${collapsed ? "justify-center" : ""}`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0"><Icon /></svg>
-            {!collapsed && <span>{label}</span>}
+        {NAV_ITEMS.map(({ label, to, Icon, badge }) => (
+          <Link key={to} to={to} title={collapsed ? label : undefined} className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 ${collapsed ? "justify-center" : "justify-between"}`}>
+            <span className="flex items-center gap-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0"><Icon /></svg>
+              {!collapsed && <span>{label}</span>}
+            </span>
+            {badge > 0 && (
+              <span className={`${collapsed ? "absolute -top-1 -right-1" : ""} w-5 h-5 rounded-full bg-signal-red text-white text-[10px] font-bold flex items-center justify-center shrink-0`}>
+                {badge > 9 ? "9+" : badge}
+              </span>
+            )}
           </Link>
         ))}
         {user?.isSuperAdmin && (

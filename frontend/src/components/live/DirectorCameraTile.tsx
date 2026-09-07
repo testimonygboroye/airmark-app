@@ -49,7 +49,7 @@ export function DirectorCameraTile({ camera, eventId, teamId }: Props) {
       <div className="px-3 py-2">
         <p className="font-display font-bold text-sm text-navy dark:text-surface-light">{camera.label}</p>
         {camera.operatorUserId ? (
-          <p className="text-xs text-standby-slate dark:text-surface-light/70">{camera.operatorUserId.firstName} {camera.operatorUserId.lastName}</p>
+          <p className="text-xs text-standby-slate dark:text-surface-light/70 truncate">{camera.operatorUserId.firstName} {camera.operatorUserId.lastName}</p>
         ) : (
           <p className="text-xs text-standby-slate/60">Unassigned</p>
         )}

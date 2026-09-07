@@ -545,3 +545,33 @@ If a connection genuinely cannot be established (extremely poor signal), that ca
     content: `On your Go Live screen, a zoom slider appears beneath your camera preview if your device supports it (most Android phones; not currently supported on iOS Safari — a browser limitation, not something Airmark controls). Drag it to zoom in or out live. To set how far that slider can go, visit Settings in the sidebar and adjust your camera zoom limit — this is a one-time preference, not something you set during a live event.`,
   }
 );
+HELP_ARTICLES.push(
+  {
+    id: "flashlight-camera-flip",
+    category: "Live Mode",
+    title: "Flashlight and switching between front/back camera",
+    keywords: ["flashlight", "torch", "flip", "front camera", "back camera", "switch camera"],
+    content: `On your Go Live screen, a flashlight icon appears in the same row as Mark/Signal/Equipment if your device supports it (rear camera only, Chrome/Android — not currently available on iOS Safari or front-facing cameras, a browser limitation). A camera-flip icon appears in that same row if your device has more than one camera, letting you switch between front and back instantly without leaving the live screen.`,
+  },
+  {
+    id: "leave-team",
+    category: "Teams",
+    title: "How to leave a team",
+    keywords: ["leave", "team", "exit", "quit"],
+    content: `From the team's Members page, any member who isn't the Team Owner can tap "Leave team" and confirm. The Team Owner must transfer ownership to someone else first — a team always needs an owner, so this path is intentionally blocked for that one role.`,
+  },
+  {
+    id: "change-member-role",
+    category: "Teams",
+    title: "How to change a team member's role",
+    keywords: ["change role", "role", "member", "director", "operator"],
+    content: `From the Members page, anyone with the member-management permission sees a role dropdown next to each member (except the Team Owner, whose role can only change via Transfer Ownership). Selecting a new role immediately updates everything tied to that role — their permissions, what they can see and do, all switch to match the new role right away. Director stays capped at one per team; if someone else already holds it, you'll need to change that person's role first.`,
+  },
+  {
+    id: "end-event-confirmation",
+    category: "Live Mode",
+    title: "Why End Event asks for confirmation",
+    keywords: ["end event", "confirmation", "confirm"],
+    content: `Ending an event immediately disables tally control until it's reopened, so Airmark asks you to confirm before doing it — a safeguard against accidentally tapping it mid-broadcast.`,
+  }
+);

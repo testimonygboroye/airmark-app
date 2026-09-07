@@ -50,7 +50,10 @@ export function DirectorLiveView({
     mutationFn: async () => { await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId }); },
   });
   const endMutation = useMutation({
-    mutationFn: async () => { await apiClient.post(`/events/${eventId}/end`, { teamId: event.teamId }); },
+    mutationFn: async () => {
+      if (!window.confirm("End this event? Tally control will be disabled until it's reopened.")) throw new Error("cancelled");
+      await apiClient.post(`/events/${eventId}/end`, { teamId: event.teamId });
+    },
   });
 
   const obsConnected = obsConnection.status === "connected";
@@ -59,7 +62,7 @@ export function DirectorLiveView({
   return (
     <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
-      <CountdownOverlay targetAt={countdownTargetAt} />
+      <CountdownOverlay targetAt={countdownTargetAt} pausedRemainingMs={countdownPausedRemainingMs} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
       {obsConnected && (
         <ObsFailsafeControls eventId={eventId} teamId={event.teamId} scenes={obsConnection.scenes} fallbackSceneName={obsConnection.fallbackSceneName} streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />
