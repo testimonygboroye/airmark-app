@@ -5,21 +5,20 @@ interface Props {
 }
 
 /**
- * Deliberately NOT a full-screen fixed overlay — that previously sat on
- * top of the header and silently captured every tap on the page,
- * including the Pause/Resume/Stop controls. This is a small floating
- * banner instead: visible, unmissable, but everything else stays usable.
+ * No longer absolutely/fixed positioned — that was still capable of
+ * landing on top of buttons depending on how the header wrapped on
+ * narrower screens. This now renders as a normal block in the page's
+ * own layout flow, occupying real space rather than floating over
+ * anything, guaranteeing it can never overlap another control again.
  */
 export function CountdownOverlay({ targetAt }: Props) {
   const { isActive, formatted } = useCountdown(targetAt);
   if (!isActive) return null;
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-      <div className="bg-navy/95 border border-accent-teal/40 rounded-2xl px-6 py-3 shadow-xl text-center">
-        <p className="text-[10px] font-medium text-surface-light/60 uppercase tracking-widest mb-0.5">Starting in</p>
-        <p className="font-display text-3xl font-bold text-accent-teal tabular-nums">{formatted}</p>
-      </div>
+    <div className="shrink-0 flex items-center justify-center py-2 bg-navy/95 border-b border-accent-teal/30">
+      <p className="text-[10px] font-medium text-surface-light/60 uppercase tracking-widest mr-2">Starting in</p>
+      <p className="font-display text-lg font-bold text-accent-teal tabular-nums">{formatted}</p>
     </div>
   );
 }

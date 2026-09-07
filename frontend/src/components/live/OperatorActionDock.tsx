@@ -7,6 +7,7 @@ interface Props {
   eventId: string;
   teamId: string;
   cameraId?: string;
+  inline?: boolean;
 }
 
 type PanelKey = "mark" | "signal" | "equipment" | null;
@@ -22,7 +23,7 @@ const EQUIPMENT_OPTIONS: { type: EquipmentIssueType; label: string }[] = [
   { type: "equipment_fault", label: "Equipment fault" },
 ];
 
-export function OperatorActionDock({ eventId, teamId, cameraId }: Props) {
+export function OperatorActionDock({ eventId, teamId, cameraId, inline }: Props) {
   const [openPanel, setOpenPanel] = useState<PanelKey>(null);
   const [markLabel, setMarkLabel] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export function OperatorActionDock({ eventId, teamId, cameraId }: Props) {
   });
 
   return (
-    <div className="shrink-0 relative bg-navy px-4 py-2.5 flex items-center justify-end gap-2 border-t border-white/10">
+    <div className={inline ? "flex items-center gap-2" : "shrink-0 relative bg-navy px-4 py-2.5 flex items-center justify-end gap-2 border-t border-white/10"}>
       {openPanel && <div className="fixed inset-0 z-40" onClick={() => setOpenPanel(null)} />}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-lg bg-white text-navy dark:bg-navy dark:text-surface-light text-xs font-semibold shadow-lg whitespace-nowrap border border-standby-slate/20">

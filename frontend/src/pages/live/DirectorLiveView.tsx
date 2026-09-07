@@ -58,8 +58,8 @@ export function DirectorLiveView({
 
   return (
     <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
-      <CountdownOverlay targetAt={countdownTargetAt} />
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
+      <CountdownOverlay targetAt={countdownTargetAt} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
       {obsConnected && (
         <ObsFailsafeControls eventId={eventId} teamId={event.teamId} scenes={obsConnection.scenes} fallbackSceneName={obsConnection.fallbackSceneName} streamStatus={obsConnection.streamStatus} recordStatus={obsConnection.recordStatus} />

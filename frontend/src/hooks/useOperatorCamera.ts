@@ -10,8 +10,8 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [hasCamera, setHasCamera] = useState(false);
-  const [zoomSupported, setZoomSupported] = useState(false);
-  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number }>({ min: 1, max: 1, step: 0.1 });
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
 
   useEffect(() => {
     if (!active) return;
@@ -21,7 +21,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
       const tier = getAdaptiveQualityTier();
       try {
         await track.applyConstraints(tierToConstraints(tier));
-      } catch { /* device may not support requested resolution exactly — browser picks closest */ }
+      } catch { /* device may not support requested resolution exactly */ }
       await Promise.all(sendersRef.current.map((s) => applyBitrateCap(s, tier.maxBitrate)));
     }
 
@@ -39,11 +39,11 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
         setHasCamera(true);
 
+        // Torch (flashlight) — only supported on the rear camera on
+        // Chrome/Android; not available on iOS Safari or front cameras,
+        // a real platform limitation, not something we control.
         const capabilities = (track.getCapabilities?.() as any) || {};
-        if (capabilities.zoom) {
-          setZoomSupported(true);
-          setZoomRange({ min: capabilities.zoom.min, max: capabilities.zoom.max, step: capabilities.zoom.step || 0.1 });
-        }
+        if (capabilities.torch) setTorchSupported(true);
 
         getSocket()?.emit("webrtc:camera-ready", { eventId, teamId });
       } catch (err: any) {
@@ -52,9 +52,6 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     }
     start();
 
-    // Re-check quality as the real connection changes — upgrades
-    // automatically on a stronger signal, downgrades on a weaker one,
-    // without restarting the camera or dropping the call.
     const stopWatching = watchConnectionQuality(() => {
       if (trackRef.current) applyQuality(trackRef.current);
     });
@@ -120,12 +117,14 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     };
   }, [eventId, teamId, active]);
 
-  async function setZoom(value: number) {
-    if (!trackRef.current) return;
+  async function toggleTorch() {
+    if (!trackRef.current || !torchSupported) return;
     try {
-      await trackRef.current.applyConstraints({ advanced: [{ zoom: value } as any] });
-    } catch { /* device doesn't honor it despite reporting support */ }
+      const next = !torchOn;
+      await trackRef.current.applyConstraints({ advanced: [{ torch: next } as any] });
+      setTorchOn(next);
+    } catch { /* device reports support but rejects the actual toggle */ }
   }
 
-  return { localVideoRef, cameraError, hasCamera, zoomSupported, zoomRange, setZoom };
+  return { localVideoRef, cameraError, hasCamera, torchSupported, torchOn, toggleTorch };
 }
