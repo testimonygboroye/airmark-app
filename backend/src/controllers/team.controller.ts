@@ -3,7 +3,10 @@ import mongoose, { Types } from "mongoose";
 import { Team } from "../models/Team.model";
 import { Membership } from "../models/Membership.model";
 import { Role } from "../models/Role.model";
+import { Event } from "../models/Event.model";
+import { LeaveRequest } from "../models/LeaveRequest.model";
 import { seedDefaultRolesForTeam } from "../services/role.service";
+import { createLeaveRequest } from "./leaveRequest.controller";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 
@@ -17,7 +20,6 @@ function slugify(name: string): string {
 export const createTeam = asyncHandler(async (req: Request, res: Response) => {
   const { name } = req.body;
   const userId = new Types.ObjectId(req.user!.id);
-
   const session = await mongoose.startSession();
   try {
     let teamId: Types.ObjectId;
@@ -55,15 +57,11 @@ export const updateMemberRole = asyncHandler(async (req: Request, res: Response)
   if (!membership) throw ApiError.notFound("Membership not found");
 
   const currentRole = membership.roleId as any;
-  if (currentRole?.name === "Team Owner") {
-    throw ApiError.badRequest("Use Transfer Ownership to change who holds the Team Owner role");
-  }
+  if (currentRole?.name === "Team Owner") throw ApiError.badRequest("Use Transfer Ownership to change who holds the Team Owner role");
 
   const newRole = await Role.findOne({ _id: roleId, teamId });
   if (!newRole) throw ApiError.badRequest("Role not found for this team");
-  if (newRole.name === "Team Owner") {
-    throw ApiError.badRequest("Use Transfer Ownership to assign the Team Owner role");
-  }
+  if (newRole.name === "Team Owner") throw ApiError.badRequest("Use Transfer Ownership to assign the Team Owner role");
   if (newRole.name === "Director") {
     const existingDirector = await Membership.findOne({ teamId, roleId: newRole._id, status: "active", _id: { $ne: membershipId } });
     if (existingDirector) throw ApiError.conflict("This team already has a Director — only one is allowed at a time.");
@@ -71,11 +69,7 @@ export const updateMemberRole = asyncHandler(async (req: Request, res: Response)
 
   membership.roleId = newRole._id as Types.ObjectId;
   await membership.save();
-
-  const populated = await membership.populate([
-    { path: "userId", select: "firstName lastName email" },
-    { path: "roleId", select: "name rank" },
-  ]);
+  const populated = await membership.populate([{ path: "userId", select: "firstName lastName email" }, { path: "roleId", select: "name rank" }]);
   res.json({ success: true, data: populated });
 });
 
@@ -97,8 +91,16 @@ export const leaveTeam = asyncHandler(async (req: Request, res: Response) => {
   if (!membership) throw ApiError.notFound("You are not a member of this team");
   const role = membership.roleId as any;
   if (role?.name === "Team Owner") throw ApiError.badRequest("Transfer ownership to someone else before leaving this team");
+
+  const liveEvent = await Event.findOne({ teamId, status: "live" });
+  if (liveEvent) {
+    await createLeaveRequest(teamId, req.user!.id);
+    res.json({ success: true, message: "An event is currently live. Your leave request was sent to the Director for approval.", data: { type: "pending" } });
+    return;
+  }
+
   await membership.deleteOne();
-  res.json({ success: true, message: "You have left the team" });
+  res.json({ success: true, message: "You have left the team", data: { type: "left" } });
 });
 
 export const updateTeam = asyncHandler(async (req: Request, res: Response) => {
@@ -168,14 +170,13 @@ export const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
   const otherMembers = await Membership.countDocuments({ teamId, status: "active", userId: { $ne: req.user!.id } });
   if (otherMembers > 0) throw ApiError.badRequest("Remove all other members from this team before deleting it");
 
-  const { Event } = await import("../models/Event.model");
   const { CameraAssignment } = await import("../models/CameraAssignment.model");
-
   await Promise.all([
     CameraAssignment.deleteMany({ teamId }),
     Event.deleteMany({ teamId }),
     Role.deleteMany({ teamId }),
     Membership.deleteMany({ teamId }),
+    LeaveRequest.deleteMany({ teamId }),
     Team.findByIdAndDelete(teamId),
   ]);
   res.json({ success: true, message: "Team deleted permanently" });

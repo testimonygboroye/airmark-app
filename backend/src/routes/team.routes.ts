@@ -8,6 +8,7 @@ import { requirePermission } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validate.middleware";
 import { createTeamSchema, updateMemberRoleSchema, removeMemberSchema, updateTeamSchema, transferOwnershipByEmailSchema, deleteTeamSchema } from "../validators/team.validator";
 import { PERMISSIONS } from "../utils/permissions";
+import * as leaveRequestController from "../controllers/leaveRequest.controller";
 
 const router = Router();
 
@@ -21,6 +22,9 @@ router.post("/:teamId/transfer-ownership", validate(transferOwnershipByEmailSche
 router.patch("/:teamId/members/:membershipId/role", validate(updateMemberRoleSchema), requirePermission(PERMISSIONS.MEMBER_INVITE), teamController.updateMemberRole);
 router.delete("/:teamId/members/:membershipId", validate(removeMemberSchema), requirePermission(PERMISSIONS.MEMBER_REMOVE), teamController.removeMember);
 router.post("/:teamId/leave", requireAuth, teamController.leaveTeam);
+router.get("/:teamId/leave-requests", requireAuth, requirePermission(PERMISSIONS.MEMBER_INVITE), leaveRequestController.listLeaveRequests);
+router.post("/:teamId/leave-requests/:requestId/approve", requireAuth, requirePermission(PERMISSIONS.MEMBER_INVITE), leaveRequestController.approveLeaveRequest);
+router.post("/:teamId/leave-requests/:requestId/deny", requireAuth, requirePermission(PERMISSIONS.MEMBER_INVITE), leaveRequestController.denyLeaveRequest);
 router.use("/:teamId/checklist-templates", teamChecklistRouter);
 router.use("/:teamId/roles", roleRoutes);
 router.use("/:teamId/invites", inviteRoutes);
