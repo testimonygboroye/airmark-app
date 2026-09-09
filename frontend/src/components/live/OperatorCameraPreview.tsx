@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 
 interface Props {
-  videoRef: RefObject<HTMLVideoElement>;
+  videoRef: RefObject<HTMLVideoElement | null>;
   hasCamera: boolean;
   cameraError: string | null;
   zoomSupported: boolean;

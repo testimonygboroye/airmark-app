@@ -9,6 +9,5 @@ module.exports = {
     "^.+\\.tsx?$": ["ts-jest", { isolatedModules: true, tsconfig: "tsconfig.jest.json" }],
   },
   testMatch: ["**/src/tests/**/*.test.ts"],
-  setupFilesAfterEach: [],
   setupFiles: [],
 };
