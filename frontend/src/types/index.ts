@@ -287,3 +287,9 @@ export interface MyInviteRecord {
 export interface VapidKeyResponse {
   publicKey: string;
 }
+
+export interface LeaveRequestRecord {
+  _id: string;
+  userId: { _id: string; firstName: string; lastName: string; email: string };
+  createdAt: string;
+}

@@ -7,7 +7,7 @@ import { useTeamRole } from "@/hooks/useTeamRole";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import type { TeamMemberEntry, TeamInviteRecord, Role, Membership } from "@/types";
+import type { TeamMemberEntry, TeamInviteRecord, Role, Membership, LeaveRequestRecord } from "@/types";
 
 export function TeamMembersPage() {
   const { teamId } = useParams<{ teamId: string }>();
@@ -131,9 +131,40 @@ export function TeamMembersPage() {
   });
 
   const leaveTeamMutation = useMutation({
-    mutationFn: async () => { await apiClient.post(`/teams/${teamId}/leave`); },
-    onSuccess: () => navigate("/dashboard"),
+    mutationFn: async () => {
+      const res = await apiClient.post<{ message: string; data?: { type: string } }>(`/teams/${teamId}/leave`);
+      return res.data;
+    },
+    onSuccess: (res) => {
+      if (res.data?.type === "pending") {
+        alert(res.message);
+      } else {
+        navigate("/dashboard");
+      }
+    },
     onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const { data: leaveRequests } = useQuery({
+    queryKey: ["leaveRequests", teamId],
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: LeaveRequestRecord[] }>(`/teams/${teamId}/leave-requests`);
+      return res.data.data;
+    },
+    enabled: !!teamId && canManageMembers,
+  });
+
+  const approveLeaveMutation = useMutation({
+    mutationFn: async (requestId: string) => { await apiClient.post(`/teams/${teamId}/leave-requests/${requestId}/approve`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leaveRequests", teamId] });
+      queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
+    },
+  });
+
+  const denyLeaveMutation = useMutation({
+    mutationFn: async (requestId: string) => { await apiClient.post(`/teams/${teamId}/leave-requests/${requestId}/deny`); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leaveRequests", teamId] }),
   });
 
   const transferMutation = useMutation({
@@ -219,6 +250,26 @@ export function TeamMembersPage() {
         </>
       )}
 
+      {leaveRequests && leaveRequests.length > 0 && (
+        <>
+          <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">Pending leave requests</h2>
+          <div className="flex flex-col gap-2 mb-6">
+            {leaveRequests.map((r) => (
+              <Card key={r._id} className="!p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium">{r.userId.firstName} {r.userId.lastName}</p>
+                  <p className="text-xs text-standby-slate mt-0.5">Wants to leave while an event is live</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => confirm(`Approve ${r.userId.firstName}'s request to leave?`) && approveLeaveMutation.mutate(r._id)} className="text-xs text-accent-teal font-medium">Approve</button>
+                  <button onClick={() => confirm(`Deny ${r.userId.firstName}'s request to leave?`) && denyLeaveMutation.mutate(r._id)} className="text-xs text-signal-red font-medium">Deny</button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
       <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">Current members</h2>
       {membersLoading && <p className="text-sm text-standby-slate">Loading…</p>}
       <div className="flex flex-col gap-2 mb-6">
@@ -251,7 +302,7 @@ export function TeamMembersPage() {
           <p className="font-display text-sm font-semibold text-signal-red mb-1">Leave this team</p>
           <p className="text-xs text-standby-slate mb-3">You'll lose access to this team's events and data.</p>
           {error && <p className="text-sm text-signal-red mb-2">{error}</p>}
-          <Button variant="ghost" onClick={() => confirm("Leave this team? You'll need a new invite to rejoin.") && leaveTeamMutation.mutate()} isLoading={leaveTeamMutation.isPending} className="text-signal-red">
+          <Button variant="ghost" onClick={() => confirm("Leave this team? If an event is currently live, this will be sent to the Director for approval instead of leaving immediately. You'll need a new invite to rejoin either way.") && leaveTeamMutation.mutate()} isLoading={leaveTeamMutation.isPending} className="text-signal-red">
             Leave team
           </Button>
         </Card>
