@@ -74,3 +74,7 @@ export function getSocketServer(): SocketServer {
   if (!io) throw new Error("Socket server not initialized");
   return io;
 }
+
+// Separate namespace for the Direct Stream bridge (RTMP, no OBS) — mirrors
+// the OBS bridge's pattern but stays fully independent, since a team may
+// use either approach without the other.

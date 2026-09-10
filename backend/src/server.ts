@@ -4,6 +4,7 @@ import { createApp } from "./app";
 import { connectDatabase } from "./config/database";
 import { initializeSocketServer, getSocketServer } from "./sockets";
 import { initializeObsBridgeNamespace } from "./sockets/obsBridge.socket";
+import { initializeDirectStreamBridgeNamespace } from "./sockets/directStreamBridge.socket";
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
@@ -13,6 +14,7 @@ async function bootstrap(): Promise<void> {
 
   initializeSocketServer(httpServer);
   initializeObsBridgeNamespace(getSocketServer());
+  initializeDirectStreamBridgeNamespace(getSocketServer());
 
   httpServer.listen(env.PORT, () => {
     console.log(`[server] Airmark backend running on port ${env.PORT} (${env.NODE_ENV})`);

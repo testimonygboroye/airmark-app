@@ -2,11 +2,10 @@ import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { LeaveRequest } from "../models/LeaveRequest.model";
 import { Membership } from "../models/Membership.model";
-import { Event } from "../models/Event.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { createNotification } from "../services/notification.service";
-import { PERMISSIONS, WILDCARD_PERMISSION } from "../utils/permissions";
+import { WILDCARD_PERMISSION } from "../utils/permissions";
 
 /**
  * Called from teamController.leaveTeam when a live event exists for the

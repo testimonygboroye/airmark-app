@@ -7,6 +7,7 @@ import talkbackRoutes from "./talkback.routes";
 import highlightRoutes from "./highlight.routes";
 import equipmentRoutes from "./equipment.routes";
 import obsRoutes from "./obs.routes";
+import directStreamRoutes from "./directStream.routes";
 import { eventChecklistRouter } from "./checklist.routes";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requirePermission } from "../middleware/permission.middleware";
@@ -49,5 +50,6 @@ router.use("/:eventId/highlights", highlightRoutes);
 router.use("/:eventId/equipment", equipmentRoutes);
 router.use("/:eventId/checklist", eventChecklistRouter);
 router.use("/:eventId/obs", obsRoutes);
+router.use("/:eventId/direct-stream", directStreamRoutes);
 
 export default router;
