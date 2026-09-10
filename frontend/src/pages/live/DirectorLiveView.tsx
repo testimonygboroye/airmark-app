@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
@@ -9,6 +10,7 @@ import { SignalInbox } from "@/components/live/SignalInbox";
 import { TalkbackControls } from "@/components/live/TalkbackControls";
 import { MarkButton } from "@/components/live/MarkButton";
 import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
+import { DirectStreamPanel } from "@/components/live/DirectStreamPanel";
 import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
 import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
@@ -23,6 +25,7 @@ import { ObsFavoriteOverlays } from "@/components/live/ObsFavoriteOverlays";
 import { ObsIntroOutroSettings } from "@/components/live/ObsIntroOutroSettings";
 import { DirectorCameraTile } from "@/components/live/DirectorCameraTile";
 import { useCountdown } from "@/hooks/useCountdown";
+import { useLiveGuardStore } from "@/store/liveGuardStore";
 import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord, SignalRecord, ObsConnectionRecord } from "@/types";
 
 interface Props {
@@ -45,6 +48,17 @@ export function DirectorLiveView({
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
   const isPaused = !countdownActive && !!countdownPausedRemainingMs;
+  const setLiveGuard = useLiveGuardStore((s) => s.setGuard);
+  const clearLiveGuard = useLiveGuardStore((s) => s.clearGuard);
+
+  useEffect(() => {
+    if (event.status === "live") {
+      setLiveGuard("End the event before logging out.");
+    } else {
+      clearLiveGuard();
+    }
+    return () => clearLiveGuard();
+  }, [event.status, setLiveGuard, clearLiveGuard]);
 
   const startMutation = useMutation({
     mutationFn: async () => { await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId }); },
@@ -60,7 +74,7 @@ export function DirectorLiveView({
   const btnBase = "text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70";
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
+    <div className="min-h-full flex flex-col relative bg-surface-light dark:bg-navy text-navy dark:text-surface-light pb-16">
       <SignalInbox eventId={eventId} teamId={event.teamId} signals={signals} />
       <CountdownOverlay targetAt={countdownTargetAt} pausedRemainingMs={countdownPausedRemainingMs} />
       <MarkButton eventId={eventId} teamId={event.teamId} />
@@ -85,6 +99,7 @@ export function DirectorLiveView({
             </button>
           )}
           <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
+          <DirectStreamPanel eventId={eventId} teamId={event.teamId} />
           {obsConnected && (
             <>
               <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />
