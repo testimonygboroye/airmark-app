@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, Link } from "react-router";
+import { Outlet, Link, useNavigate } from "react-router";
 import { Logo } from "@/components/brand/Logo";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -7,9 +7,9 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { AppSidebar } from "@/components/ui/AppSidebar";
 import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
+import { useLiveGuardStore } from "@/store/liveGuardStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
-import { useNavigate } from "react-router";
 
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
@@ -23,9 +23,14 @@ const NAV_ITEMS = [
 export function LiveLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, clearAuth } = useAuthStore();
+  const blockReason = useLiveGuardStore((s) => s.blockReason);
   const navigate = useNavigate();
 
   async function handleLogout() {
+    if (blockReason) {
+      alert(`Can't log out right now: ${blockReason}`);
+      return;
+    }
     if (!window.confirm("Log out of Airmark?")) return;
     try {
       await apiClient.post("/auth/logout");
@@ -78,16 +83,14 @@ export function LiveLayout() {
               <div className="mt-auto pt-6 border-t border-standby-slate/15">
                 <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
                 <div className="mt-2"><ThemeToggle /></div>
-                <button onClick={handleLogout} className="text-xs text-signal-red font-medium mt-3">Log out</button>
+                <button onClick={handleLogout} className={`text-xs font-medium mt-3 ${blockReason ? "text-standby-slate/50" : "text-signal-red"}`}>
+                  Log out{blockReason ? " (unavailable right now)" : ""}
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* overflow-y-auto here (not hidden) — Director's content is
-            taller than the viewport and needs to scroll. OperatorLiveView
-            fills this exactly with h-full + its own overflow-hidden, so
-            it never triggers this scroll despite the parent allowing it. */}
         <main className="flex-1 min-h-0 overflow-y-auto">
           <Outlet />
         </main>

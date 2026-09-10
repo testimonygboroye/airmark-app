@@ -96,6 +96,15 @@ export function TeamMembersPage() {
     enabled: !!teamId,
   });
 
+  const { data: leaveRequests } = useQuery({
+    queryKey: ["leaveRequests", teamId],
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: LeaveRequestRecord[] }>(`/teams/${teamId}/leave-requests`);
+      return res.data.data;
+    },
+    enabled: !!teamId && canManageMembers,
+  });
+
   const inviteMutation = useMutation({
     mutationFn: async () => {
       const res = await apiClient.post<{ message: string }>(`/teams/${teamId}/invites`, { email, roleId });
@@ -143,15 +152,6 @@ export function TeamMembersPage() {
       }
     },
     onError: (err) => setError(getErrorMessage(err)),
-  });
-
-  const { data: leaveRequests } = useQuery({
-    queryKey: ["leaveRequests", teamId],
-    queryFn: async () => {
-      const res = await apiClient.get<{ data: LeaveRequestRecord[] }>(`/teams/${teamId}/leave-requests`);
-      return res.data.data;
-    },
-    enabled: !!teamId && canManageMembers,
   });
 
   const approveLeaveMutation = useMutation({
@@ -216,6 +216,7 @@ export function TeamMembersPage() {
 
       {renameMessage && <p className="text-sm text-accent-teal mb-4">{renameMessage}</p>}
       {transferMessage && <p className="text-sm text-accent-teal mb-4">{transferMessage}</p>}
+      {error && <p className="text-sm text-signal-red mb-4">{error}</p>}
 
       {canManageMembers && (
         <Card className="mb-6">
@@ -226,11 +227,30 @@ export function TeamMembersPage() {
               <option value="">Select role…</option>
               {assignableRoles.map((r) => (<option key={r._id} value={r._id}>{r.name}</option>))}
             </select>
-            {error && <p className="text-sm text-signal-red">{error}</p>}
             {message && <p className="text-sm text-accent-teal">{message}</p>}
             <Button onClick={() => inviteMutation.mutate()} isLoading={inviteMutation.isPending} disabled={!email || !roleId}>Send invite</Button>
           </div>
         </Card>
+      )}
+
+      {canManageMembers && leaveRequests && leaveRequests.length > 0 && (
+        <>
+          <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">Pending leave requests</h2>
+          <div className="flex flex-col gap-2 mb-6">
+            {leaveRequests.map((r) => (
+              <Card key={r._id} className="!p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium">{r.userId.firstName} {r.userId.lastName}</p>
+                  <p className="text-xs text-standby-slate mt-0.5">Wants to leave while an event is live</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => confirm(`Approve ${r.userId.firstName}'s request to leave the team?`) && approveLeaveMutation.mutate(r._id)} className="text-xs text-accent-teal font-medium">Approve</button>
+                  <button onClick={() => confirm(`Deny ${r.userId.firstName}'s request to leave?`) && denyLeaveMutation.mutate(r._id)} className="text-xs text-signal-red font-medium">Deny</button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
 
       {pendingInvites && pendingInvites.length > 0 && (
@@ -250,26 +270,6 @@ export function TeamMembersPage() {
         </>
       )}
 
-      {leaveRequests && leaveRequests.length > 0 && (
-        <>
-          <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">Pending leave requests</h2>
-          <div className="flex flex-col gap-2 mb-6">
-            {leaveRequests.map((r) => (
-              <Card key={r._id} className="!p-4 flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <p className="text-sm font-medium">{r.userId.firstName} {r.userId.lastName}</p>
-                  <p className="text-xs text-standby-slate mt-0.5">Wants to leave while an event is live</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => confirm(`Approve ${r.userId.firstName}'s request to leave?`) && approveLeaveMutation.mutate(r._id)} className="text-xs text-accent-teal font-medium">Approve</button>
-                  <button onClick={() => confirm(`Deny ${r.userId.firstName}'s request to leave?`) && denyLeaveMutation.mutate(r._id)} className="text-xs text-signal-red font-medium">Deny</button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-
       <h2 className="font-display text-sm font-semibold text-standby-slate uppercase tracking-wide mb-3">Current members</h2>
       {membersLoading && <p className="text-sm text-standby-slate">Loading…</p>}
       <div className="flex flex-col gap-2 mb-6">
@@ -281,11 +281,7 @@ export function TeamMembersPage() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {canManageMembers && m.roleId.name !== "Team Owner" && (
-                <select
-                  className="text-xs rounded-lg border border-standby-slate/30 px-2 py-1.5 bg-white dark:bg-navy/60"
-                  value={m.roleId._id}
-                  onChange={(e) => changeRoleMutation.mutate({ membershipId: m._id, roleId: e.target.value })}
-                >
+                <select className="text-xs rounded-lg border border-standby-slate/30 px-2 py-1.5 bg-white dark:bg-navy/60" value={m.roleId._id} onChange={(e) => changeRoleMutation.mutate({ membershipId: m._id, roleId: e.target.value })}>
                   {assignableRoles.map((r) => (<option key={r._id} value={r._id}>{r.name}</option>))}
                 </select>
               )}
@@ -300,9 +296,15 @@ export function TeamMembersPage() {
       {!isOwner && (
         <Card className="mb-6 border-signal-red/30">
           <p className="font-display text-sm font-semibold text-signal-red mb-1">Leave this team</p>
-          <p className="text-xs text-standby-slate mb-3">You'll lose access to this team's events and data.</p>
-          {error && <p className="text-sm text-signal-red mb-2">{error}</p>}
-          <Button variant="ghost" onClick={() => confirm("Leave this team? If an event is currently live, this will be sent to the Director for approval instead of leaving immediately. You'll need a new invite to rejoin either way.") && leaveTeamMutation.mutate()} isLoading={leaveTeamMutation.isPending} className="text-signal-red">
+          <p className="text-xs text-standby-slate mb-3">
+            If an event is currently live, this sends a request to the Director for approval instead of leaving immediately.
+          </p>
+          <Button
+            variant="ghost"
+            onClick={() => confirm("Leave this team? If an event is currently live, this will need Director approval. You'll need a new invite to rejoin either way.") && leaveTeamMutation.mutate()}
+            isLoading={leaveTeamMutation.isPending}
+            className="text-signal-red"
+          >
             Leave team
           </Button>
         </Card>

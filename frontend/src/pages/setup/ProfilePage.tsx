@@ -158,7 +158,6 @@ export function ProfilePage() {
     <div className="max-w-md mx-auto px-4 py-8 flex flex-col gap-6">
       <h1 className="font-display text-2xl font-semibold">Profile</h1>
       <p className="text-sm text-standby-slate -mt-4">
-        Account-specific settings. Looking for app preferences like camera zoom? Check Settings in the sidebar.
       </p>
 
       <Card>
