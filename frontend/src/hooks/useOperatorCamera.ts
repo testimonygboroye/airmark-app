@@ -9,6 +9,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
   const sendersRef = useRef<RTCRtpSender[]>([]);
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [hasCamera, setHasCamera] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [zoomSupported, setZoomSupported] = useState(false);
@@ -128,9 +129,6 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     } catch { /* rejected by device */ }
   }
 
-  /** Restarts getUserMedia with the flipped facingMode and swaps the
-   * outgoing track on every existing peer connection so the Director's
-   * view updates without needing to reconnect. */
   function flipCamera() {
     setTorchOn(false);
     setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
