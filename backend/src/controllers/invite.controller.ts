@@ -36,13 +36,28 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
   const existingInvite = await TeamInvite.findOne({ teamId, email, status: "pending" });
   if (existingInvite) throw ApiError.conflict("An invite is already pending for this email");
 
+  // A real TeamInvite record is created either way — this is what powers
+  // both the Invites page listing and its badge count. Existing verified
+  // users previously only got a notification with nothing to act on;
+  // now they get a real, acceptable invite plus a notification pointing
+  // to it, exactly like an unregistered person's email invite does.
   const { raw, hash } = generateSecureToken();
-  await TeamInvite.create({ teamId, email, roleId, invitedBy, tokenHash: hash, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+  await TeamInvite.create({
+    teamId, email, roleId, invitedBy, tokenHash: hash,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
   const inviterName = inviter ? `${inviter.firstName} ${inviter.lastName}` : "A team director";
 
   if (existingUser) {
-    await createNotification({ userId: existingUser._id, teamId, type: "system", title: `Invitation to join ${team.name}`, body: `${inviterName} invited you as ${role.name}. Open Invites to respond.` });
-    res.status(201).json({ success: true, message: `${existingUser.firstName} was notified in-app and must accept the invite themselves.`, data: { type: "notified_in_app" } });
+    await createNotification({
+      userId: existingUser._id,
+      teamId,
+      type: "system",
+      title: `Invitation to join ${team.name}`,
+      body: `${inviterName} invited you as ${role.name}. Open Invites to accept or decline.`,
+    });
+    res.status(201).json({ success: true, message: `${existingUser.firstName} was notified and can accept from their Invites page.`, data: { type: "notified_in_app" } });
     return;
   }
 
