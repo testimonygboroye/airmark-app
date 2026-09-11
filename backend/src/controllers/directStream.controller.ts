@@ -8,7 +8,6 @@ import { ApiError } from "../utils/ApiError";
 export const saveConfig = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { teamId, platformLabel, rtmpUrl, streamKey } = req.body;
-
   const config = await DirectStreamConfig.findOneAndUpdate(
     { eventId },
     { teamId, platformLabel, rtmpUrl, streamKey },
@@ -34,16 +33,23 @@ export const startStream = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const config = await DirectStreamConfig.findOne({ eventId }).select("+streamKey");
   if (!config) throw ApiError.badRequest("Set up your platform's RTMP URL and stream key first");
+  if (config.status === "idle") {
+    throw ApiError.badRequest("No bridge is currently connected — run the bridge script on your laptop and pair it first");
+  }
 
   getSocketServer().of("/direct-stream-bridge").to(`direct-stream:${eventId}`).emit("directstream:start", {
     rtmpUrl: config.rtmpUrl,
     streamKey: config.streamKey,
   });
-  res.json({ success: true, message: "Start command sent to the bridge" });
+  res.json({ success: true, message: "Start command sent to your bridge — check its terminal window for progress." });
 });
 
 export const stopStream = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
+  const config = await DirectStreamConfig.findOne({ eventId });
+  if (!config || config.status === "idle") {
+    throw ApiError.badRequest("No bridge is currently connected — there's nothing to stop");
+  }
   getSocketServer().of("/direct-stream-bridge").to(`direct-stream:${eventId}`).emit("directstream:stop", {});
-  res.json({ success: true, message: "Stop command sent to the bridge" });
+  res.json({ success: true, message: "Stop command sent to your bridge." });
 });

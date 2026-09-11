@@ -1,5 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
+export type DirectStreamStatus = "idle" | "bridge_connected" | "streaming";
+
 export interface IDirectStreamConfig extends Document {
   _id: Types.ObjectId;
   eventId: Types.ObjectId;
@@ -7,7 +9,7 @@ export interface IDirectStreamConfig extends Document {
   platformLabel: string;
   rtmpUrl: string;
   streamKey: string;
-  status: "idle" | "connected" | "streaming";
+  status: DirectStreamStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,7 +21,7 @@ const directStreamConfigSchema = new Schema<IDirectStreamConfig>(
     platformLabel: { type: String, required: true, maxlength: 60 },
     rtmpUrl: { type: String, required: true },
     streamKey: { type: String, required: true, select: false },
-    status: { type: String, enum: ["idle", "connected", "streaming"], default: "idle" },
+    status: { type: String, enum: ["idle", "bridge_connected", "streaming"], default: "idle" },
   },
   { timestamps: true }
 );
