@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -8,13 +8,21 @@ interface Props {
   teamId: string;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  idle: "No bridge connected",
+  bridge_connected: "Bridge connected — ready to start",
+  streaming: "🔴 Streaming",
+};
+
 export function DirectStreamPanel({ eventId, teamId }: Props) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [platformLabel, setPlatformLabel] = useState("");
   const [rtmpUrl, setRtmpUrl] = useState("");
   const [streamKey, setStreamKey] = useState("");
   const [pairingToken, setPairingToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const { data: status } = useQuery({
     queryKey: ["directStreamStatus", eventId],
@@ -22,13 +30,12 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
       const res = await apiClient.get(`/events/${eventId}/direct-stream/status`);
       return res.data.data as { platformLabel: string; status: string } | null;
     },
-    refetchInterval: 5000,
+    refetchInterval: 4000,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.put(`/events/${eventId}/direct-stream/config`, { teamId, platformLabel, rtmpUrl, streamKey });
-    },
+    mutationFn: async () => { await apiClient.put(`/events/${eventId}/direct-stream/config`, { teamId, platformLabel, rtmpUrl, streamKey }); },
+    onSuccess: () => { setError(null); setActionMessage("Destination saved."); setTimeout(() => setActionMessage(null), 3000); },
     onError: (err) => setError(getErrorMessage(err)),
   });
 
@@ -41,10 +48,20 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
   });
 
   const startMutation = useMutation({
-    mutationFn: async () => { await apiClient.post(`/events/${eventId}/direct-stream/start`, { teamId }); },
+    mutationFn: async () => {
+      const res = await apiClient.post(`/events/${eventId}/direct-stream/start`, { teamId });
+      return res.data.message as string;
+    },
+    onSuccess: (msg) => { setError(null); setActionMessage(msg); queryClient.invalidateQueries({ queryKey: ["directStreamStatus", eventId] }); },
+    onError: (err) => setError(getErrorMessage(err)),
   });
   const stopMutation = useMutation({
-    mutationFn: async () => { await apiClient.post(`/events/${eventId}/direct-stream/stop`, { teamId }); },
+    mutationFn: async () => {
+      const res = await apiClient.post(`/events/${eventId}/direct-stream/stop`, { teamId });
+      return res.data.message as string;
+    },
+    onSuccess: (msg) => { setError(null); setActionMessage(msg); queryClient.invalidateQueries({ queryKey: ["directStreamStatus", eventId] }); },
+    onError: (err) => setError(getErrorMessage(err)),
   });
 
   const btnBase = "text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70";
@@ -63,7 +80,8 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
         <p className="font-display font-semibold mb-1">Direct Stream (Basic)</p>
         <p className="text-xs text-standby-slate mb-4">
           Sends one camera feed to any RTMP destination — YouTube, Facebook, Twitch, Telegram, or anywhere else that
-          accepts RTMP. No OBS needed, but still requires a laptop with ffmpeg running the bridge.
+          accepts RTMP. No OBS needed, but still requires a laptop running the bridge script (see Help Guide for
+          full setup steps).
         </p>
 
         <div className="flex flex-col gap-2 mb-4">
@@ -71,6 +89,7 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
           <input placeholder="RTMP URL (e.g. rtmp://a.rtmp.youtube.com/live2)" value={rtmpUrl} onChange={(e) => setRtmpUrl(e.target.value)} className="text-sm rounded-lg px-3 py-2 border border-standby-slate/20 text-navy dark:text-surface-light dark:bg-navy/60" />
           <input placeholder="Stream key" value={streamKey} onChange={(e) => setStreamKey(e.target.value)} className="text-sm rounded-lg px-3 py-2 border border-standby-slate/20 text-navy dark:text-surface-light dark:bg-navy/60" />
           {error && <p className="text-xs text-signal-red">{error}</p>}
+          {actionMessage && <p className="text-xs text-accent-teal">{actionMessage}</p>}
           <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !platformLabel || !rtmpUrl || !streamKey} className="text-xs font-semibold py-2 rounded-lg bg-accent-teal text-navy disabled:opacity-50">
             Save destination
           </button>
@@ -80,17 +99,13 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
           <button onClick={() => pairMutation.mutate()} disabled={pairMutation.isPending} className={btnBase}>
             Generate bridge pairing code
           </button>
-          {pairingToken && (
-            <div className="text-xs bg-standby-slate/10 rounded-lg p-2 break-all font-mono">{pairingToken}</div>
-          )}
-          <p className="text-xs text-standby-slate">
-            Run the bridge on your laptop and paste this code when prompted (expires in 10 minutes).
-          </p>
+          {pairingToken && <div className="text-xs bg-standby-slate/10 rounded-lg p-2 break-all font-mono">{pairingToken}</div>}
+          <p className="text-xs text-standby-slate">Run the bridge on your laptop and paste this code when prompted (expires in 10 minutes).</p>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-standby-slate/15 mb-4">
-          <span className="text-xs text-standby-slate">
-            Status: <strong>{status?.status ?? "idle"}</strong>
+          <span className={`text-xs font-medium ${status?.status === "streaming" ? "text-signal-red" : status?.status === "bridge_connected" ? "text-accent-teal" : "text-standby-slate"}`}>
+            {STATUS_LABELS[status?.status ?? "idle"]}
           </span>
           <div className="flex gap-2">
             <button onClick={() => startMutation.mutate()} disabled={startMutation.isPending} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-signal-red text-white">Start</button>
@@ -98,7 +113,7 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
           </div>
         </div>
 
-        <button onClick={() => setOpen(false)} className="w-full py-2.5 rounded-lg text-sm text-standby-slate border border-standby-slate/20">Close</button>
+        <button onClick={() => { setOpen(false); setError(null); setActionMessage(null); }} className="w-full py-2.5 rounded-lg text-sm text-standby-slate border border-standby-slate/20">Close</button>
       </div>
     </div>
   );
