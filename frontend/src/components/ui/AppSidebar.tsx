@@ -6,6 +6,7 @@ import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, Hel
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
+import { queryClient } from "@/lib/queryClient";
 
 interface Props {
   collapsed: boolean;
@@ -32,6 +33,7 @@ export function AppSidebar({ collapsed, onToggleCollapse, inviteCount = 0 }: Pro
       await apiClient.post("/auth/logout");
     } finally {
       disconnectSocket();
+      queryClient.clear();
       clearAuth();
       navigate("/login", { state: { loggedOut: true }, replace: true });
     }

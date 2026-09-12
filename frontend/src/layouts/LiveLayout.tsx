@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/ui/AppSidebar";
 import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
 import { useLiveGuardStore } from "@/store/liveGuardStore";
+import { queryClient } from "@/lib/queryClient";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
 
@@ -36,6 +37,7 @@ export function LiveLayout() {
       await apiClient.post("/auth/logout");
     } finally {
       disconnectSocket();
+      queryClient.clear();
       clearAuth();
       navigate("/login", { state: { loggedOut: true }, replace: true });
     }
