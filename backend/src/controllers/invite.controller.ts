@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Types } from "mongoose";
 import crypto from "crypto";
 import { TeamInvite } from "../models/TeamInvite.model";
+import { Notification } from "../models/Notification.model";
 import { Membership } from "../models/Membership.model";
 import { Role } from "../models/Role.model";
 import { User } from "../models/User.model";
@@ -36,13 +37,8 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
   const existingInvite = await TeamInvite.findOne({ teamId, email, status: "pending" });
   if (existingInvite) throw ApiError.conflict("An invite is already pending for this email");
 
-  // A real TeamInvite record is created either way — this is what powers
-  // both the Invites page listing and its badge count. Existing verified
-  // users previously only got a notification with nothing to act on;
-  // now they get a real, acceptable invite plus a notification pointing
-  // to it, exactly like an unregistered person's email invite does.
   const { raw, hash } = generateSecureToken();
-  await TeamInvite.create({
+  const invite = await TeamInvite.create({
     teamId, email, roleId, invitedBy, tokenHash: hash,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
@@ -56,6 +52,7 @@ export const createInvite = asyncHandler(async (req: Request, res: Response): Pr
       type: "system",
       title: `Invitation to join ${team.name}`,
       body: `${inviterName} invited you as ${role.name}. Open Invites to accept or decline.`,
+      relatedInviteId: invite._id,
     });
     res.status(201).json({ success: true, message: `${existingUser.firstName} was notified and can accept from their Invites page.`, data: { type: "notified_in_app" } });
     return;
@@ -116,6 +113,12 @@ export const acceptMyInvite = asyncHandler(async (req: Request, res: Response) =
 
   invite.status = "accepted";
   await invite.save();
+
+  // Marks the original invite notification read automatically — the
+  // person just acted on it, so it shouldn't linger as "unread" until
+  // they separately clear it themselves.
+  await Notification.updateMany({ userId: user._id, relatedInviteId: invite._id }, { read: true });
+
   res.json({ success: true, message: invite.isOwnershipTransfer ? "You are now Team Owner." : "You've joined the team." });
 });
 
@@ -125,5 +128,6 @@ export const declineMyInvite = asyncHandler(async (req: Request, res: Response) 
   if (!user) throw ApiError.notFound("User not found");
   const invite = await TeamInvite.findOneAndDelete({ _id: inviteId, email: user.email, status: "pending" });
   if (!invite) throw ApiError.notFound("Invite not found");
+  await Notification.updateMany({ userId: user._id, relatedInviteId: invite._id }, { read: true });
   res.json({ success: true, message: "Invite declined" });
 });

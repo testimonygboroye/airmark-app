@@ -12,6 +12,7 @@ interface CreateNotificationInput {
   title: string;
   body?: string;
   senderEmail?: string;
+  relatedInviteId?: string | Types.ObjectId;
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<void> {

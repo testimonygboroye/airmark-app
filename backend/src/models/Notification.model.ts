@@ -11,6 +11,7 @@ export interface INotification extends Document {
   title: string;
   body?: string;
   senderEmail?: string;
+  relatedInviteId?: Types.ObjectId;
   read: boolean;
   createdAt: Date;
 }
@@ -28,6 +29,7 @@ const notificationSchema = new Schema<INotification>(
     title: { type: String, required: true, maxlength: 150 },
     body: { type: String, maxlength: 300 },
     senderEmail: { type: String },
+    relatedInviteId: { type: Schema.Types.ObjectId, ref: "TeamInvite" },
     read: { type: Boolean, default: false, index: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
