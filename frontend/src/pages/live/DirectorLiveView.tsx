@@ -25,7 +25,6 @@ import { ObsFavoriteOverlays } from "@/components/live/ObsFavoriteOverlays";
 import { ObsIntroOutroSettings } from "@/components/live/ObsIntroOutroSettings";
 import { DirectorCameraTile } from "@/components/live/DirectorCameraTile";
 import { useCountdown } from "@/hooks/useCountdown";
-import { useLiveGuardStore } from "@/store/liveGuardStore";
 import type { EventRecord, CameraAssignmentRecord, RunOfShowSegmentRecord, SignalRecord, ObsConnectionRecord } from "@/types";
 
 interface Props {
@@ -48,17 +47,6 @@ export function DirectorLiveView({
   const navigate = useNavigate();
   const { isActive: countdownActive } = useCountdown(countdownTargetAt);
   const isPaused = !countdownActive && !!countdownPausedRemainingMs;
-  const setLiveGuard = useLiveGuardStore((s) => s.setGuard);
-  const clearLiveGuard = useLiveGuardStore((s) => s.clearGuard);
-
-  useEffect(() => {
-    if (event.status === "live") {
-      setLiveGuard("End the event before logging out.");
-    } else {
-      clearLiveGuard();
-    }
-    return () => clearLiveGuard();
-  }, [event.status, setLiveGuard, clearLiveGuard]);
 
   const startMutation = useMutation({
     mutationFn: async () => { await apiClient.post(`/events/${eventId}/start`, { teamId: event.teamId }); },

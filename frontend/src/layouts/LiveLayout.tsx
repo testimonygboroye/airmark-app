@@ -7,8 +7,8 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { AppSidebar } from "@/components/ui/AppSidebar";
 import { DashboardIcon, NewTeamIcon, InvitesIcon, ProfileIcon, SettingsIcon, HelpIcon, ConsoleIcon } from "@/components/ui/NavIcons";
 import { useAuthStore } from "@/store/authStore";
-import { useLiveGuardStore } from "@/store/liveGuardStore";
 import { queryClient } from "@/lib/queryClient";
+import { checkLogoutAllowed } from "@/lib/logoutGuard";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
 
@@ -24,12 +24,12 @@ const NAV_ITEMS = [
 export function LiveLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, clearAuth } = useAuthStore();
-  const blockReason = useLiveGuardStore((s) => s.blockReason);
   const navigate = useNavigate();
 
   async function handleLogout() {
-    if (blockReason) {
-      alert(`Can't log out right now: ${blockReason}`);
+    const { blocked, reason } = await checkLogoutAllowed();
+    if (blocked) {
+      alert(`Can't log out right now: ${reason}`);
       return;
     }
     if (!window.confirm("Log out of Airmark?")) return;
@@ -85,8 +85,8 @@ export function LiveLayout() {
               <div className="mt-auto pt-6 border-t border-standby-slate/15">
                 <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
                 <div className="mt-2"><ThemeToggle /></div>
-                <button onClick={handleLogout} className={`text-xs font-medium mt-3 ${blockReason ? "text-standby-slate/50" : "text-signal-red"}`}>
-                  Log out{blockReason ? " (unavailable right now)" : ""}
+                <button onClick={handleLogout} className="text-xs font-medium mt-3 text-signal-red">
+                  Log out
                 </button>
               </div>
             </div>

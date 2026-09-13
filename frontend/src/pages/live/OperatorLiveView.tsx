@@ -5,7 +5,6 @@ import { OperatorActionDock } from "@/components/live/OperatorActionDock";
 import { OperatorCameraPreview } from "@/components/live/OperatorCameraPreview";
 import { TalkbackBanner } from "@/components/live/TalkbackBanner";
 import { useOperatorCamera } from "@/hooks/useOperatorCamera";
-import { useLiveGuardStore } from "@/store/liveGuardStore";
 import type { CameraAssignmentRecord, RunOfShowSegmentRecord, TalkbackMessageRecord } from "@/types";
 
 interface Props {
@@ -25,18 +24,6 @@ export function OperatorLiveView({
 }: Props) {
   const cam = useOperatorCamera(eventId, teamId, true);
   const [zoomValue, setZoomValue] = useState(1);
-  const setLiveGuard = useLiveGuardStore((s) => s.setGuard);
-  const clearLiveGuard = useLiveGuardStore((s) => s.clearGuard);
-
-  useEffect(() => {
-    if (camera.isLive) {
-      setLiveGuard("Wait until you're off-air (STANDBY) before logging out.");
-    } else {
-      clearLiveGuard();
-    }
-    return () => clearLiveGuard();
-  }, [camera.isLive, setLiveGuard, clearLiveGuard]);
-
   return (
     <div className="h-full overflow-hidden flex flex-col bg-navy text-surface-light">
       <TalkbackBanner message={latestTalkback} />

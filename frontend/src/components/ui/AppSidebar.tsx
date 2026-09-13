@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/apiClient";
 import { disconnectSocket } from "@/lib/socketClient";
 import { queryClient } from "@/lib/queryClient";
+import { checkLogoutAllowed } from "@/lib/logoutGuard";
 
 interface Props {
   collapsed: boolean;
@@ -28,6 +29,11 @@ export function AppSidebar({ collapsed, onToggleCollapse, inviteCount = 0 }: Pro
   ];
 
   async function handleLogout() {
+    const { blocked, reason } = await checkLogoutAllowed();
+    if (blocked) {
+      alert(`Can't log out right now: ${reason}`);
+      return;
+    }
     if (!window.confirm("Log out of Airmark?")) return;
     try {
       await apiClient.post("/auth/logout");
