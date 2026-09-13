@@ -35,6 +35,7 @@ router.post("/logout", authController.logout);
 router.post("/forgot-password", authRateLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 router.post("/reset-password", authRateLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.get("/me", requireAuth, authController.getMe);
+router.get("/logout-guard", requireAuth, authController.getLogoutGuard);
 router.patch("/me", requireAuth, validate(updateProfileSchema), authController.updateProfile);
 router.delete("/me", requireAuth, validate(deleteAccountSchema), authController.deleteAccount);
 router.post("/change-password", requireAuth, validate(changePasswordSchema), authController.changePassword);

@@ -334,3 +334,34 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   res.json({ success: true, message: "Account permanently deleted" });
 });
 
+
+export const getLogoutGuard = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { Membership } = await import("../models/Membership.model");
+  const { Event } = await import("../models/Event.model");
+  const { CameraAssignment } = await import("../models/CameraAssignment.model");
+
+  const memberships = await Membership.find({ userId, status: "active" }).populate("roleId");
+  const directorTeamIds = memberships
+    .filter((m) => (m.roleId as any)?.name === "Director")
+    .map((m) => m.teamId);
+
+  if (directorTeamIds.length > 0) {
+    const liveEvent = await Event.findOne({ teamId: { $in: directorTeamIds }, status: "live" });
+    if (liveEvent) {
+      res.json({ success: true, data: { blocked: true, reason: "You are Director on a team with a live event. End the event before logging out." } });
+      return;
+    }
+  }
+
+  const liveCamera = await CameraAssignment.findOne({ operatorUserId: userId, isLive: true });
+  if (liveCamera) {
+    const event = await Event.findById(liveCamera.eventId);
+    if (event?.status === "live") {
+      res.json({ success: true, data: { blocked: true, reason: "You're currently live on a camera. Wait until you're on standby before logging out." } });
+      return;
+    }
+  }
+
+  res.json({ success: true, data: { blocked: false, reason: null } });
+});
