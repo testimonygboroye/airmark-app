@@ -68,6 +68,7 @@ export function EventDetailPage() {
   const canManage = hasPermission("event:manage");
   const canGoLive = hasPermission("tally:control");
   const canViewLive = hasPermission("tally:view");
+  const isViewerOnly = !canManage && !canGoLive && !canManageRos;
   const canManageRos = hasPermission("ros:manage");
   const canViewHighlights = hasPermission("highlight:view");
   const canViewEquipment = hasPermission("equipment:manage");

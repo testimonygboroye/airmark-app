@@ -37,6 +37,7 @@ import { MyInvitesPage } from "@/pages/setup/MyInvitesPage";
 import { HelpPage } from "@/pages/setup/HelpPage";
 import { HelpArticlePage } from "@/pages/setup/HelpArticlePage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
+import { AudienceViewPage } from "@/pages/live/AudienceViewPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export function AppRouter() {
@@ -97,6 +98,7 @@ export function AppRouter() {
           }
         >
           <Route path="/events/:eventId/live" element={<EventLivePage />} />
+          <Route path="/events/:eventId/audience-view" element={<AudienceViewPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
