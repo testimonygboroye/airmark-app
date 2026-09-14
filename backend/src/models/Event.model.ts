@@ -11,6 +11,7 @@ export interface IEvent extends Document {
   currentSegmentId?: Types.ObjectId;
   countdownTargetAt?: Date;
   countdownPausedRemainingMs?: number;
+  publicShareToken?: string;
   actualStartAt?: Date;
   endedAt?: Date;
   createdBy: Types.ObjectId;
@@ -32,6 +33,7 @@ const eventSchema = new Schema<IEvent>(
     currentSegmentId: { type: Schema.Types.ObjectId, ref: "RunOfShowSegment" },
     countdownTargetAt: { type: Date },
     countdownPausedRemainingMs: { type: Number },
+    publicShareToken: { type: String, unique: true, sparse: true },
     actualStartAt: { type: Date },
     endedAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

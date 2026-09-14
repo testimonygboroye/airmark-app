@@ -40,6 +40,7 @@ router.patch("/:eventId/cameras/:cameraId/assign", validate(assignOperatorSchema
 
 router.post("/:eventId/start", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.startEvent);
 router.post("/:eventId/end", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.endEvent);
+router.post("/:eventId/public-link", requireAuth, requirePermission(PERMISSIONS.TALLY_CONTROL), eventController.getOrCreatePublicLink);
 router.post("/:eventId/reopen", validate(eventStatusSchema), requirePermission(PERMISSIONS.EVENT_MANAGE), eventController.reopenEvent);
 
 router.use("/:eventId/segments", runOfShowRoutes);

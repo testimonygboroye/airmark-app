@@ -17,24 +17,26 @@ export function initializeSocketServer(httpServer: HttpServer): SocketServer {
 
   io.on("connection", async (socket) => {
     const authedSocket = socket as AuthenticatedSocket;
-    const { userId } = authedSocket.data;
+    const { userId, isPublic, publicTeamId } = authedSocket.data;
 
     socket.join(`user:${userId}`);
 
-    try {
-      const memberships = await Membership.find({ userId, status: "active" }).select("teamId");
-      memberships.forEach((m) => socket.join(`team:${m.teamId.toString()}`));
-      socket.emit("connection:ready", { teams: memberships.map((m) => m.teamId.toString()) });
-    } catch (err) {
-      console.error("[socket] failed to join team rooms:", err);
+    if (isPublic && publicTeamId) {
+      // Public viewers only ever join the single team room tied to the
+      // share link they used — never their own personal notifications
+      // room's content, never any other team.
+      socket.join(`team:${publicTeamId}`);
+      socket.emit("connection:ready", { teams: [publicTeamId] });
+    } else {
+      try {
+        const memberships = await Membership.find({ userId, status: "active" }).select("teamId");
+        memberships.forEach((m) => socket.join(`team:${m.teamId.toString()}`));
+        socket.emit("connection:ready", { teams: memberships.map((m) => m.teamId.toString()) });
+      } catch (err) {
+        console.error("[socket] failed to join team rooms:", err);
+      }
     }
 
-    /**
-     * WebRTC signaling relay — every payload here is a small text message
-     * (session descriptions, ICE candidates), never video itself. Video
-     * flows directly phone-to-phone once the connection is established;
-     * this server only ever helps two phones find each other.
-     */
     socket.on("webrtc:offer", (payload: { toUserId: string }) => {
       io!.to(`user:${payload.toUserId}`).emit("webrtc:offer", { ...payload, fromUserId: userId });
     });
@@ -74,7 +76,3 @@ export function getSocketServer(): SocketServer {
   if (!io) throw new Error("Socket server not initialized");
   return io;
 }
-
-// Separate namespace for the Direct Stream bridge (RTMP, no OBS) — mirrors
-// the OBS bridge's pattern but stays fully independent, since a team may
-// use either approach without the other.

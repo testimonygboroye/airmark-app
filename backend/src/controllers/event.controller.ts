@@ -195,3 +195,17 @@ export const removeCamera = asyncHandler(async (req: Request, res: Response) => 
   emitToTeam(teamId, "cameras:update", { eventId, cameras });
   res.json({ success: true, data: { cameras } });
 });
+
+export const getOrCreatePublicLink = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  const event = await Event.findById(eventId);
+  if (!event) throw ApiError.notFound("Event not found");
+
+  if (!event.publicShareToken) {
+    const crypto = await import("crypto");
+    event.publicShareToken = crypto.randomBytes(16).toString("hex");
+    await event.save();
+  }
+
+  res.json({ success: true, data: { publicShareToken: event.publicShareToken } });
+});

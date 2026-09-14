@@ -47,7 +47,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     async function start() {
       try {
         const initialTier = getAdaptiveQualityTier();
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { ...tierToConstraints(initialTier), facingMode }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { ...tierToConstraints(initialTier), facingMode }, audio: { echoCancellation: true, noiseSuppression: true } });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
