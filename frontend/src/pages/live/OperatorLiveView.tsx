@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SegmentBanner } from "@/components/live/SegmentBanner";
 import { CountdownOverlay } from "@/components/live/CountdownOverlay";
 import { OperatorActionDock } from "@/components/live/OperatorActionDock";

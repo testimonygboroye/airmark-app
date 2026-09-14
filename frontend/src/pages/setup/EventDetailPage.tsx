@@ -68,12 +68,12 @@ export function EventDetailPage() {
   const canManage = hasPermission("event:manage");
   const canGoLive = hasPermission("tally:control");
   const canViewLive = hasPermission("tally:view");
-  const isViewerOnly = !canManage && !canGoLive && !canManageRos;
   const canManageRos = hasPermission("ros:manage");
   const canViewHighlights = hasPermission("highlight:view");
   const canViewEquipment = hasPermission("equipment:manage");
   const canCompleteChecklist = hasPermission("checklist:complete");
   const canViewReadiness = hasPermission("checklist:manage");
+  const isViewerOnly = !canManage && !canGoLive && !canManageRos;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -97,6 +97,7 @@ export function EventDetailPage() {
             {canManage && <Link to={`/events/${event._id}/edit`}><Button variant="ghost">Edit</Button></Link>}
             {canManageRos && <Link to={`/events/${event._id}/run-of-show`}><Button variant="secondary">Run of show</Button></Link>}
             {(canGoLive || canViewLive) && <Link to={`/events/${event._id}/live`}><Button>{canGoLive ? "Go Live" : "View Live"}</Button></Link>}
+            {isViewerOnly && <Link to={`/events/${event._id}/audience-view`}><Button variant="secondary">Watch as Audience</Button></Link>}
           </div>
           <div className="flex flex-wrap gap-3 justify-end">
             {canCompleteChecklist && <Link to={`/events/${event._id}/checklist`} className="text-xs text-accent-teal font-medium">My checklist</Link>}

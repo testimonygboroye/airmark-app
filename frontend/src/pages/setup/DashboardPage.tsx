@@ -9,7 +9,6 @@ import type { Membership } from "@/types";
 
 export function DashboardPage() {
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ["myTeams"],
@@ -80,7 +79,6 @@ export function DashboardPage() {
           );
         })}
       </div>
-      {error && <p className="text-sm text-signal-red mt-4">{error}</p>}
     </div>
   );
 }

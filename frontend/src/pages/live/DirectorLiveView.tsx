@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/apiClient";
