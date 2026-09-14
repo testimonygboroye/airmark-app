@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -5,7 +6,7 @@ import { useDirectorCameraStream } from "@/hooks/useDirectorCameraStream";
 import { LiveVideoPlayer } from "@/components/live/LiveVideoPlayer";
 import type { CameraAssignmentRecord, EventRecord } from "@/types";
 
-export function AudienceViewPage() {
+export function EditorAudienceViewPage() {
   const { eventId } = useParams<{ eventId: string }>();
 
   const { data } = useQuery({
@@ -27,10 +28,6 @@ export function AudienceViewPage() {
         stream={stream}
         statusLabel={liveCamera ? `Connecting to ${liveCamera.label}…` : "No camera is currently live"}
       />
-      <p className="fixed bottom-10 left-1/2 -translate-x-1/2 text-[10px] text-white/40 text-center px-4">
-        This shows Airmark's live camera feed directly. If this team streams via OBS or Direct Stream, the actual
-        audience broadcast lives on YouTube/Facebook/etc, not here.
-      </p>
     </div>
   );
 }
