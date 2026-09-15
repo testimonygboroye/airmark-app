@@ -12,6 +12,7 @@ import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
 import { DirectStreamPanel } from "@/components/live/DirectStreamPanel";
 import { AudienceLinkPanel } from "@/components/live/AudienceLinkPanel";
 import { AudienceLinkPanel } from "@/components/live/AudienceLinkPanel";
+import { AudienceLinkPanel } from "@/components/live/AudienceLinkPanel";
 import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
 import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
@@ -89,6 +90,7 @@ export function DirectorLiveView({
           )}
           <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
           <DirectStreamPanel eventId={eventId} teamId={event.teamId} />
+          <AudienceLinkPanel eventId={eventId} />
           <AudienceLinkPanel eventId={eventId} />
           <AudienceLinkPanel eventId={eventId} />
           {obsConnected && (
