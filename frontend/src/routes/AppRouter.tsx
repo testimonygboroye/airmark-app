@@ -37,11 +37,8 @@ import { MyInvitesPage } from "@/pages/setup/MyInvitesPage";
 import { HelpPage } from "@/pages/setup/HelpPage";
 import { HelpArticlePage } from "@/pages/setup/HelpArticlePage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
-import { PublicAudiencePage } from "@/pages/live/PublicAudiencePage";
-import { EditorAudienceViewPage } from "@/pages/live/EditorAudienceViewPage";
-import { PublicAudiencePage } from "@/pages/live/PublicAudiencePage";
-import { EditorAudienceViewPage } from "@/pages/live/EditorAudienceViewPage";
 import { AudienceViewPage } from "@/pages/live/AudienceViewPage";
+import { PublicAudiencePage } from "@/pages/live/PublicAudiencePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export function AppRouter() {
@@ -50,7 +47,6 @@ export function AppRouter() {
       <RouteTracker />
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/watch/:token" element={<PublicAudiencePage />} />
         <Route path="/watch/:token" element={<PublicAudiencePage />} />
 
         <Route element={<AuthLayout />}>
@@ -86,14 +82,15 @@ export function AppRouter() {
           <Route path="/events/:eventId/equipment" element={<EquipmentStatusPage />} />
           <Route path="/events/:eventId/checklist" element={<EventChecklistPage />} />
           <Route path="/events/:eventId/readiness" element={<EventReadinessPage />} />
+          <Route path="/events/:eventId/audience-view" element={<AudienceViewPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/invites" element={<MyInvitesPage />} />
-          <Route path="/system-console" element={<AdminDashboardPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/help/:articleId" element={<HelpArticlePage />} />
+          <Route path="/system-console" element={<AdminDashboardPage />} />
         </Route>
 
         <Route
@@ -104,9 +101,6 @@ export function AppRouter() {
           }
         >
           <Route path="/events/:eventId/live" element={<EventLivePage />} />
-          <Route path="/events/:eventId/audience-view" element={<AudienceViewPage />} />
-          <Route path="/events/:eventId/editor-audience-view" element={<EditorAudienceViewPage />} />
-          <Route path="/events/:eventId/editor-audience-view" element={<EditorAudienceViewPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
