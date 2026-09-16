@@ -11,6 +11,7 @@ interface Props {
 export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
   const [open, setOpen] = useState(false);
   const [pairingToken, setPairingToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const pairMutation = useMutation({
     mutationFn: async () => {
@@ -59,10 +60,12 @@ export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
             <button
               onClick={() => {
                 navigator.clipboard?.writeText(pairingToken);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1000);
               }}
               className="mt-2 text-xs text-accent-teal font-medium"
             >
-              Copy code
+              {copied ? "Copied!" : "Copy code"}
             </button>
           </div>
         ) : (

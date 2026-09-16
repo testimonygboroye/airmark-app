@@ -31,7 +31,6 @@ export function StreamingMethodPicker(props: Props) {
   }, [activeMethod, props.eventId]);
 
   const btnBase = "text-xs font-medium px-3 py-1.5 rounded-lg border border-standby-slate/30 dark:border-white/15 text-standby-slate dark:text-surface-light/70";
-  const activeBtn = "text-xs font-semibold px-3 py-1.5 rounded-lg bg-accent-teal text-navy";
 
   function select(method: string) {
     setActiveMethod(method);
