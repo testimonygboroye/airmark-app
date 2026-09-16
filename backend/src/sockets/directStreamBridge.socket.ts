@@ -10,12 +10,12 @@ export function initializeDirectStreamBridgeNamespace(io: SocketServer): void {
     try {
       const token = socket.handshake.auth?.token as string | undefined;
       if (!token) return next(new Error("Missing pairing token"));
-      const payload = verifyBridgePairingToken(token);
+      const payload = verifyBridgePairingToken(token, "direct-stream-bridge-pairing");
       socket.data.eventId = payload.eventId;
       socket.data.teamId = payload.teamId;
       next();
-    } catch {
-      next(new Error("Invalid or expired pairing token"));
+    } catch (err) {
+      next(new Error((err as Error).message || "Invalid or expired pairing token"));
     }
   });
 

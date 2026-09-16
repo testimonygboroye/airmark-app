@@ -25,7 +25,7 @@ export const getStatus = asyncHandler(async (req: Request, res: Response) => {
 export const generatePairingToken = asyncHandler(async (req: Request, res: Response) => {
   const eventId = req.params.eventId as string;
   const { teamId } = req.body;
-  const token = signBridgePairingToken({ eventId, teamId });
+  const token = signBridgePairingToken({ eventId, teamId }, "direct-stream-bridge-pairing");
   res.json({ success: true, data: { pairingToken: token, expiresInMinutes: 10 } });
 });
 
