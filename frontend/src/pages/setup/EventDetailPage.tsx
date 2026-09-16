@@ -73,7 +73,7 @@ export function EventDetailPage() {
   const canViewEquipment = hasPermission("equipment:manage");
   const canCompleteChecklist = hasPermission("checklist:complete");
   const canViewReadiness = hasPermission("checklist:manage");
-  const isViewerOnly = !canManage && !canGoLive && !canManageRos;
+  const isViewerOnly = !canManage && !canGoLive && !canManageRos && canViewLive && !hasPermission("signal:send") && !hasPermission("highlight:create");
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

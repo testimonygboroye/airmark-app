@@ -8,7 +8,7 @@ import type { CameraAssignmentRecord, EventRecord } from "@/types";
 export function AudienceViewPage() {
   const { eventId } = useParams<{ eventId: string }>();
 
-  const { data } = useQuery({
+  const { data, isError, isLoading } = useQuery({
     queryKey: ["eventLive", eventId],
     queryFn: async () => {
       const res = await apiClient.get<{ data: { event: EventRecord; cameras: CameraAssignmentRecord[] } }>(`/events/${eventId}`);
@@ -19,18 +19,9 @@ export function AudienceViewPage() {
   });
 
   const liveCamera = data?.cameras.find((c) => c.isLive);
-  const { stream } = useDirectorCameraStream(eventId ?? "", data?.event.teamId ?? "", liveCamera?.operatorUserId?._id);
+  const { stream, status } = useDirectorCameraStream(eventId ?? "", data?.event.teamId ?? "", liveCamera?.operatorUserId?._id);
 
-  return (
-    <div className="h-screen bg-black">
-      <LiveVideoPlayer
-        stream={stream}
-        statusLabel={liveCamera ? `Connecting to ${liveCamera.label}…` : "No camera is currently live"}
-      />
-      <p className="fixed bottom-10 left-1/2 -translate-x-1/2 text-[10px] text-white/40 text-center px-4">
-        This shows Airmark's live camera feed directly. If this team streams via OBS or Direct Stream, the actual
-        audience broadcast lives on YouTube/Facebook/etc, not here.
-      </p>
-    </div>
-  );
+  const phase = isError ? "error" : isLoading ? "loading" : !liveCamera ? "no_live_camera" : stream ? "playing" : status === "reconnecting" ? "reconnecting" : "connecting";
+
+  return <LiveVideoPlayer stream={stream} phase={phase} />;
 }
