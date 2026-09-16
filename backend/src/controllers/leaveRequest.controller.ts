@@ -29,14 +29,18 @@ export async function createLeaveRequest(teamId: string, userId: string): Promis
   const requester = await User.findById(userId);
   const requesterName = requester ? `${requester.firstName} ${requester.lastName}` : "A team member";
 
+  const { Team } = await import("../models/Team.model");
+  const team = await Team.findById(teamId);
+  const teamName = team?.name ?? "your team";
+
   await Promise.all(
     directors.map((m) =>
       createNotification({
         userId: m.userId,
         teamId,
         type: "system",
-        title: "Leave-team request during a live event",
-        body: `${requesterName} wants to leave the team while an event is live. Review in Team Members.`,
+        title: `Leave request for "${teamName}" during a live event`,
+        body: `${requesterName} wants to leave "${teamName}" while an event is live. Review in Team Members.`,
       })
     )
   );
@@ -61,11 +65,13 @@ export const approveLeaveRequest = asyncHandler(async (req: Request, res: Respon
   leaveRequest.resolvedAt = new Date();
   await leaveRequest.save();
 
+  const teamApproved = await (await import("../models/Team.model")).Team.findById(teamId);
   await createNotification({
     userId: leaveRequest.userId,
     teamId,
     type: "system",
-    title: "Your request to leave the team was approved",
+    title: `You have left "${teamApproved?.name ?? "the team"}"`,
+    body: `Your request to leave "${teamApproved?.name ?? "the team"}" was approved. You are no longer a member.`,
   });
 
   res.json({ success: true, message: "Leave request approved — member removed from the team" });
@@ -83,11 +89,13 @@ export const denyLeaveRequest = asyncHandler(async (req: Request, res: Response)
   leaveRequest.resolvedAt = new Date();
   await leaveRequest.save();
 
+  const teamDenied = await (await import("../models/Team.model")).Team.findById(teamId);
   await createNotification({
     userId: leaveRequest.userId,
     teamId,
     type: "system",
-    title: "Your request to leave the team was denied",
+    title: `Your request to leave "${teamDenied?.name ?? "the team"}" was denied`,
+    body: `You remain a member of "${teamDenied?.name ?? "the team"}".`,
   });
 
   res.json({ success: true, message: "Leave request denied" });

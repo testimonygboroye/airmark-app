@@ -340,6 +340,7 @@ export const getLogoutGuard = asyncHandler(async (req: Request, res: Response) =
   const { Membership } = await import("../models/Membership.model");
   const { Event } = await import("../models/Event.model");
   const { CameraAssignment } = await import("../models/CameraAssignment.model");
+  const { Team } = await import("../models/Team.model");
 
   const memberships = await Membership.find({ userId, status: "active" }).populate("roleId");
   const directorTeamIds = memberships
@@ -347,9 +348,10 @@ export const getLogoutGuard = asyncHandler(async (req: Request, res: Response) =
     .map((m) => m.teamId);
 
   if (directorTeamIds.length > 0) {
-    const liveEvent = await Event.findOne({ teamId: { $in: directorTeamIds }, status: "live" });
-    if (liveEvent) {
-      res.json({ success: true, data: { blocked: true, reason: "You are Director on a team with a live event. End the event before logging out." } });
+    const liveEvents = await Event.find({ teamId: { $in: directorTeamIds }, status: "live" }).populate("teamId", "name");
+    if (liveEvents.length > 0) {
+      const list = liveEvents.map((e) => `"${e.title}" (${(e.teamId as any).name})`).join(", ");
+      res.json({ success: true, data: { blocked: true, reason: `You are Director on a live event: ${list}. End it before logging out.` } });
       return;
     }
   }
@@ -358,7 +360,8 @@ export const getLogoutGuard = asyncHandler(async (req: Request, res: Response) =
   if (liveCamera) {
     const event = await Event.findById(liveCamera.eventId);
     if (event?.status === "live") {
-      res.json({ success: true, data: { blocked: true, reason: "You're currently live on a camera. Wait until you're on standby before logging out." } });
+      const team = await Team.findById(liveCamera.teamId);
+      res.json({ success: true, data: { blocked: true, reason: `You're currently live on "${event.title}" (${team?.name ?? "your team"}). Wait until you're on standby before logging out.` } });
       return;
     }
   }

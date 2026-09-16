@@ -19,7 +19,6 @@ export const getPublicEvent = asyncHandler(async (req: Request, res: Response) =
       title: event.title,
       status: event.status,
       liveCameraOperatorUserId: liveCamera?.operatorUserId ?? null,
-      liveCameraLabel: liveCamera?.label ?? null,
     },
   });
 });
