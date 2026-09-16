@@ -8,9 +8,7 @@ import { CountdownControls } from "@/components/live/CountdownControls";
 import { SignalInbox } from "@/components/live/SignalInbox";
 import { TalkbackControls } from "@/components/live/TalkbackControls";
 import { MarkButton } from "@/components/live/MarkButton";
-import { ObsPairingPanel } from "@/components/live/ObsPairingPanel";
-import { DirectStreamPanel } from "@/components/live/DirectStreamPanel";
-import { AudienceLinkPanel } from "@/components/live/AudienceLinkPanel";
+import { StreamingMethodPicker } from "@/components/live/StreamingMethodPicker";
 import { ObsSceneSwitcher } from "@/components/live/ObsSceneSwitcher";
 import { ObsTransitionControls } from "@/components/live/ObsTransitionControls";
 import { ObsSceneItemsPanel } from "@/components/live/ObsSceneItemsPanel";
@@ -86,9 +84,7 @@ export function DirectorLiveView({
               End Event
             </button>
           )}
-          <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
-          <DirectStreamPanel eventId={eventId} teamId={event.teamId} />
-          <AudienceLinkPanel eventId={eventId} teamId={event.teamId} />
+          <StreamingMethodPicker eventId={eventId} teamId={event.teamId} cameras={cameras} obsConnection={obsConnection} />
           {obsConnected && (
             <>
               <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />

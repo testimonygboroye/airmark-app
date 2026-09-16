@@ -39,6 +39,7 @@ import { HelpArticlePage } from "@/pages/setup/HelpArticlePage";
 import { EventLivePage } from "@/pages/live/EventLivePage";
 import { AudienceViewPage } from "@/pages/live/AudienceViewPage";
 import { PublicAudiencePage } from "@/pages/live/PublicAudiencePage";
+import { ObsCameraSourcePage } from "@/pages/live/ObsCameraSourcePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export function AppRouter() {
@@ -48,6 +49,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/watch/:token" element={<PublicAudiencePage />} />
+        <Route path="/obs-source/:token/:operatorUserId" element={<ObsCameraSourcePage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
