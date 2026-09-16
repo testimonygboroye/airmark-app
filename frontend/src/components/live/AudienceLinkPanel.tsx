@@ -1,22 +1,26 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/errors";
 
 interface Props {
   eventId: string;
+  teamId: string;
 }
 
-export function AudienceLinkPanel({ eventId }: Props) {
+export function AudienceLinkPanel({ eventId, teamId }: Props) {
   const [open, setOpen] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiClient.post(`/events/${eventId}/public-link`);
+      const res = await apiClient.post(`/events/${eventId}/public-link`, { teamId });
       return res.data.data.publicShareToken as string;
     },
-    onSuccess: (token) => setLink(`${window.location.origin}/watch/${token}`),
+    onSuccess: (token) => { setLink(`${window.location.origin}/watch/${token}`); setError(null); },
+    onError: (err) => setError(getErrorMessage(err)),
   });
 
   function openPanel() {
@@ -34,9 +38,7 @@ export function AudienceLinkPanel({ eventId }: Props) {
   async function shareLink() {
     if (!link) return;
     if (navigator.share) {
-      try {
-        await navigator.share({ title: "Watch live", url: link });
-      } catch { /* user cancelled the share sheet — no action needed */ }
+      try { await navigator.share({ title: "Watch live", url: link }); } catch { /* user cancelled */ }
     } else {
       copyLink();
     }
@@ -52,22 +54,22 @@ export function AudienceLinkPanel({ eventId }: Props) {
     <div className="fixed inset-0 z-50 bg-navy/90 backdrop-blur-sm flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white dark:bg-navy border border-standby-slate/20 rounded-2xl p-5">
         <p className="font-display font-semibold mb-1">Audience link</p>
-        <p className="text-xs text-standby-slate mb-4">
-          Anyone with this link can watch this event's live feed with sound — no Airmark account needed.
-        </p>
+        <p className="text-xs text-standby-slate mb-4">Anyone with this link can watch this event's live feed with sound — no Airmark account needed.</p>
 
-        {!link ? (
-          <p className="text-xs text-standby-slate">Generating link…</p>
-        ) : (
+        {error && (
+          <div className="mb-3">
+            <p className="text-xs text-signal-red mb-2">{error}</p>
+            <button onClick={() => fetchMutation.mutate()} className="text-xs text-accent-teal font-medium">Retry</button>
+          </div>
+        )}
+        {!link && !error && <p className="text-xs text-standby-slate">Generating link…</p>}
+
+        {link && (
           <>
             <div className="text-xs bg-standby-slate/10 rounded-lg p-2 break-all font-mono mb-3">{link}</div>
             <div className="flex gap-2 mb-4">
-              <button onClick={copyLink} className="flex-1 text-xs font-semibold py-2 rounded-lg bg-accent-teal text-navy">
-                {copied ? "Copied!" : "Copy link"}
-              </button>
-              <button onClick={shareLink} className="flex-1 text-xs font-semibold py-2 rounded-lg border border-standby-slate/30">
-                Share
-              </button>
+              <button onClick={copyLink} className="flex-1 text-xs font-semibold py-2 rounded-lg bg-accent-teal text-navy">{copied ? "Copied!" : "Copy link"}</button>
+              <button onClick={shareLink} className="flex-1 text-xs font-semibold py-2 rounded-lg border border-standby-slate/30">Share</button>
             </div>
           </>
         )}

@@ -24,7 +24,7 @@ export function useDirectorCameraStream(eventId: string, teamId: string, operato
     async function connectTo(targetUserId: string) {
       if (pcRef.current || cancelled) return;
       setStatus("connecting");
-      const pc = createPeerConnection();
+      const pc = createPeerConnection("director-to-operator");
 
       pc.ontrack = (e) => {
         setStream(e.streams[0]);

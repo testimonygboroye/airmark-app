@@ -88,7 +88,7 @@ export function DirectorLiveView({
           )}
           <ObsPairingPanel eventId={eventId} teamId={event.teamId} connected={obsConnected} />
           <DirectStreamPanel eventId={eventId} teamId={event.teamId} />
-          <AudienceLinkPanel eventId={eventId} />
+          <AudienceLinkPanel eventId={eventId} teamId={event.teamId} />
           {obsConnected && (
             <>
               <ObsTextOverlayPanel eventId={eventId} teamId={event.teamId} items={obsConnection.sceneItems ?? []} />

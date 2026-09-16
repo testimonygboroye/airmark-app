@@ -71,7 +71,7 @@ export function useOperatorCamera(eventId: string, teamId: string, active: boole
     async function handleOffer(payload: { fromUserId: string; sdp: RTCSessionDescriptionInit; eventId: string }) {
       if (payload.eventId !== eventId || !streamRef.current) return;
       peersRef.current.get(payload.fromUserId)?.close();
-      const pc = createPeerConnection();
+      const pc = createPeerConnection("operator-to-viewer");
       const tier = getAdaptiveQualityTier();
       streamRef.current.getTracks().forEach((track) => {
         const sender = pc.addTrack(track, streamRef.current!);

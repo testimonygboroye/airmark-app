@@ -20,7 +20,7 @@ export function usePublicAudienceStream(publicShareToken: string, teamId: string
     async function connectTo(targetUserId: string) {
       if (pcRef.current || cancelled) return;
       setStatus("connecting");
-      const pc = createPeerConnection();
+      const pc = createPeerConnection("public-viewer");
       pc.ontrack = (e) => { setStream(e.streams[0]); setStatus("connected"); };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
