@@ -27,6 +27,7 @@ router.use(requirePermission(PERMISSIONS.OBS_CONTROL));
 
 router.post("/pair", validate(pairSchema), obsController.generatePairingToken);
 router.get("/status", obsController.getObsStatus);
+router.post("/disconnect", obsController.disconnectBridge);
 router.post("/scene", validate(setSceneSchema), obsController.setScene);
 router.post("/transition", validate(setTransitionSchema), obsController.setTransition);
 router.patch("/scene-items/:sceneItemId/toggle", validate(toggleSceneItemSchema), obsController.toggleSceneItem);

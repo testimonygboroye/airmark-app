@@ -21,6 +21,7 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
   const [rtmpUrl, setRtmpUrl] = useState("");
   const [streamKey, setStreamKey] = useState("");
   const [pairingToken, setPairingToken] = useState<string | null>(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -99,7 +100,21 @@ export function DirectStreamPanel({ eventId, teamId }: Props) {
           <button onClick={() => pairMutation.mutate()} disabled={pairMutation.isPending} className={btnBase}>
             Generate bridge pairing code
           </button>
-          {pairingToken && <div className="text-xs bg-standby-slate/10 rounded-lg p-2 break-all font-mono">{pairingToken}</div>}
+          {pairingToken && (
+            <div className="flex flex-col gap-1">
+              <div className="text-xs bg-standby-slate/10 rounded-lg p-2 break-all font-mono">{pairingToken}</div>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(pairingToken);
+                  setTokenCopied(true);
+                  setTimeout(() => setTokenCopied(false), 1000);
+                }}
+                className="text-xs font-semibold text-accent-teal self-start"
+              >
+                {tokenCopied ? "Copied!" : "Copy code"}
+              </button>
+            </div>
+          )}
           <p className="text-xs text-standby-slate">Run the bridge on your laptop and paste this code when prompted (expires in 10 minutes).</p>
         </div>
 

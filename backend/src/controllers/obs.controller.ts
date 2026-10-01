@@ -282,3 +282,10 @@ export const setIntroOutro = asyncHandler(async (req: Request, res: Response) =>
     },
   });
 });
+
+export const disconnectBridge = asyncHandler(async (req: Request, res: Response) => {
+  const eventId = req.params.eventId as string;
+  getSocketServer().of("/obs-bridge").in(`obs-bridge:${eventId}`).disconnectSockets(true);
+  await ObsConnection.findOneAndUpdate({ eventId }, { status: "disconnected" });
+  res.json({ success: true, message: "OBS bridge disconnected" });
+});

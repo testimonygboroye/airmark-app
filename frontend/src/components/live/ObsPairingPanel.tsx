@@ -12,7 +12,6 @@ export function ObsPairingPanel({ eventId, teamId, connected }: Props) {
   const [open, setOpen] = useState(false);
   const [pairingToken, setPairingToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
   const pairMutation = useMutation({
     mutationFn: async () => {
       const res = await apiClient.post<{ data: { pairingToken: string } }>(
