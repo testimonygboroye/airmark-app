@@ -2,7 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api"),
   withCredentials: true,
   timeout: 60000, // accommodates Render free-tier cold starts (up to ~60s)
 });

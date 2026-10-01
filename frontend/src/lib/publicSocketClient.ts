@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || "https://airmark-backend.onrender.com";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || (typeof window !== "undefined" ? window.location.origin : "");
 
 let publicSocket: Socket | null = null;
 

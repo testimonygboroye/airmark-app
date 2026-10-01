@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export function connectSocket(accessToken: string): Socket {
   if (socket?.connected) return socket;
 
-  socket = io(import.meta.env.VITE_SOCKET_URL, {
+  socket = io(import.meta.env.VITE_SOCKET_URL || (typeof window !== "undefined" ? window.location.origin : undefined), {
     auth: { token: accessToken },
     reconnection: true,
     reconnectionAttempts: Infinity,
