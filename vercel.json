@@ -8,8 +8,7 @@
     "backend": {
       "root": "backend/",
       "framework": "express",
-      "entrypoint": "src/vercel.ts",
-      "maxDuration": 300
+      "entrypoint": "src/vercel.ts"
     }
   },
   "rewrites": [
