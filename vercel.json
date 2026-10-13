@@ -13,7 +13,8 @@
     },
     "backend": {
       "root": "backend/",
-      "entrypoint": "src/vercel.ts"
+      "entrypoint": "Dockerfile.vercel",
+      "runtime": "container"
     }
   },
   "rewrites": [
