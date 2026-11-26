@@ -23,5 +23,17 @@ Socket.IO · MongoDB Atlas · JWT auth · Render (hosting) · PWA
 ## Status
 🚧 In active development — Tier 2 (Coordination Layer) build in progress.
 
+## Backend test safety
+
+The backend integration tests send real HTTP requests; the registration tests can create accounts. They must target a local or disposable test environment, never production. Set TEST_BASE_URL explicitly before running npm test. Remote targets are blocked unless ALLOW_REMOTE_TEST_TARGET=true is also set after confirming that the target is an isolated staging environment. The known legacy live API host airmark-backend.onrender.com is always blocked. CI runs the isolated configuration tests with npm run test:unit; it does not run the remote integration suite.
+
+Example for a local API:
+
+```sh
+cd backend
+TEST_BASE_URL=http://127.0.0.1:5000/api npm test
+npm run test:unit
+```
+
 ## License
 Proprietary — All rights reserved, TGO DevStudio.

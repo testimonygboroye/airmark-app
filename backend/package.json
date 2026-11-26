@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "ts-node-dev --transpile-only src/seed/superAdmin.seed.ts",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand --runTestsByPath tests/testTarget.test.ts"
   },
   "engines": {
     "node": "22.x || 24.x"

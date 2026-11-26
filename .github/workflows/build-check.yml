@@ -19,8 +19,10 @@ jobs:
           node-version: 24
       - run: npm install --include=dev
       - run: npm run build
-      - name: Type-check test files (does not run tests against production)
+      - name: Type-check test files
         run: npx tsc -p tsconfig.jest.json --noEmit
+      - name: Run isolated test-target safety unit tests
+        run: npm run test:unit
 
   frontend:
     runs-on: ubuntu-latest
