@@ -6,7 +6,7 @@ describe("resolveTestBaseUrl", () => {
   });
 
   it("rejects malformed URLs and non-HTTP protocols", () => {
-    expect(() => resolveTestBaseUrl({ TEST_BASE_URL: "localhost:5000/api" })).toThrow(/absolute HTTP or HTTPS/i);
+    expect(() => resolveTestBaseUrl({ TEST_BASE_URL: "localhost:5000/api" })).toThrow(/HTTP or HTTPS/i);
     expect(() => resolveTestBaseUrl({ TEST_BASE_URL: "ftp://localhost/api" })).toThrow(/HTTP or HTTPS/i);
   });
 
@@ -14,8 +14,10 @@ describe("resolveTestBaseUrl", () => {
     expect(() => resolveTestBaseUrl({ TEST_BASE_URL: "https://user:secret@staging.example/api" })).toThrow(/embedded credentials/i);
   });
 
-  it("allows local test servers without a remote-target override", () => {
+  it("allows local IPv4, IPv6 and localhost test servers without a remote-target override", () => {
     expect(resolveTestBaseUrl({ TEST_BASE_URL: "http://localhost:5000/api/" })).toBe("http://localhost:5000/api");
+    expect(resolveTestBaseUrl({ TEST_BASE_URL: "http://127.0.0.1:5000/api" })).toBe("http://127.0.0.1:5000/api");
+    expect(resolveTestBaseUrl({ TEST_BASE_URL: "http://[::1]:5000/api" })).toBe("http://[::1]:5000/api");
   });
 
   it("blocks the known live API host even when remote testing is enabled", () => {

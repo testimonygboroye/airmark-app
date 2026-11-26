@@ -31,6 +31,7 @@ export function resolveTestBaseUrl(env: Record<string, string | undefined>): str
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname === "::1" ||
+    hostname === "[::1]" ||
     hostname.endsWith(".localhost");
 
   if (!isLoopback && env.ALLOW_REMOTE_TEST_TARGET !== "true") {
