@@ -9,3 +9,5 @@
 - Next: review/merge PR #1 through the normal owner process; keep account-creating integration tests isolated from production.
 
 - Moved the report onto existing maintenance PR #1 and closed redundant docs-only PR #2. Latest Build Check 46016606428 passed backend build/typecheck/safety tests and frontend build at `86aaa6c0c6dabec876c18ce90f9a04955c7bd913`.
+
+- Rechecked final PR #1 head `c32323f5a8ac742432038e497bd398ab70ba8056`; Build Check run 46016952227 passed backend build/typecheck/safety tests and frontend build.
