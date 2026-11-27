@@ -1,1 +1,5 @@
-export const BASE_URL = process.env.TEST_BASE_URL || "https://airmark-backend.onrender.com/api";
+import { resolveTestBaseUrl } from "../src/config/testTarget";
+
+// These integration tests send real HTTP requests, including account-creation
+// requests. Never silently default them to a deployed or production service.
+export const BASE_URL = resolveTestBaseUrl(process.env);
