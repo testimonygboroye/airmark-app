@@ -17,7 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install --include=dev
+      - name: Install locked dependencies
+        run: npm ci --include=dev
       - run: npm run build
       - name: Type-check test files
         run: npx tsc -p tsconfig.jest.json --noEmit
@@ -34,5 +35,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install
+      - name: Install locked dependencies
+        run: npm ci
       - run: npm run build
